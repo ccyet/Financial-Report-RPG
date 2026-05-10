@@ -44,9 +44,20 @@ class RpgJourney:
 
 
 @dataclass(frozen=True)
+class RpgNote:
+    id: str
+    created_at: str
+    text: str
+    tags: list[str] = field(default_factory=list)
+    linked_task_id: str | None = None
+    linked_boss_id: str | None = None
+
+
+@dataclass(frozen=True)
 class RpgProgress:
     completed_tasks: set[str] = field(default_factory=set)
     completed_bosses: set[str] = field(default_factory=set)
+    notes: list[RpgNote] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -208,6 +219,7 @@ def toggle_task(progress: RpgProgress, task_id: str, journey: RpgJourney) -> Rpg
     return RpgProgress(
         completed_tasks=completed,
         completed_bosses=set(progress.completed_bosses),
+        notes=list(progress.notes),
     )
 
 
@@ -223,6 +235,7 @@ def toggle_boss(progress: RpgProgress, boss_id: str, journey: RpgJourney) -> Rpg
     return RpgProgress(
         completed_tasks=set(progress.completed_tasks),
         completed_bosses=completed,
+        notes=list(progress.notes),
     )
 
 
@@ -241,6 +254,7 @@ def load_progress(path: str | Path, journey: RpgJourney) -> RpgProgress:
     progress = RpgProgress(
         completed_tasks=_string_set(payload.get("completed_tasks"), "completed_tasks"),
         completed_bosses=_string_set(payload.get("completed_bosses"), "completed_bosses"),
+        notes=_notes_from_payload(payload.get("notes")),
     )
     _validate_progress(progress, journey)
     return progress
@@ -252,6 +266,17 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
     payload = {
         "completed_tasks": sorted(progress.completed_tasks),
         "completed_bosses": sorted(progress.completed_bosses),
+        "notes": [
+            {
+                "id": note.id,
+                "created_at": note.created_at,
+                "text": note.text,
+                "tags": note.tags,
+                "linked_task_id": note.linked_task_id,
+                "linked_boss_id": note.linked_boss_id,
+            }
+            for note in progress.notes
+        ],
     }
     progress_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
@@ -268,6 +293,11 @@ def _validate_progress(progress: RpgProgress, journey: RpgJourney) -> None:
         raise ValueError(f"unknown RPG task id: {sorted(unknown_tasks)[0]}")
     if unknown_bosses:
         raise ValueError(f"unknown RPG boss id: {sorted(unknown_bosses)[0]}")
+    for note in progress.notes:
+        if note.linked_task_id is not None and note.linked_task_id not in task_ids:
+            raise ValueError(f"unknown RPG task id: {note.linked_task_id}")
+        if note.linked_boss_id is not None and note.linked_boss_id not in boss_ids:
+            raise ValueError(f"unknown RPG boss id: {note.linked_boss_id}")
 
 
 def _string_set(value: Any, field_name: str) -> set[str]:
@@ -276,6 +306,54 @@ def _string_set(value: Any, field_name: str) -> set[str]:
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise ValueError(f"invalid RPG progress field: {field_name}")
     return set(value)
+
+
+def _string_list(value: Any, field_name: str) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise ValueError(f"invalid RPG progress field: {field_name}")
+    return list(value)
+
+
+def _optional_string(value: Any, field_name: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"invalid RPG progress field: {field_name}")
+    return value
+
+
+def _notes_from_payload(value: Any) -> list[RpgNote]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ValueError("invalid RPG progress field: notes")
+
+    notes = []
+    for item in value:
+        if not isinstance(item, dict):
+            raise ValueError("invalid RPG progress field: notes")
+        note_id = item.get("id")
+        created_at = item.get("created_at")
+        text = item.get("text")
+        if (
+            not isinstance(note_id, str)
+            or not isinstance(created_at, str)
+            or not isinstance(text, str)
+        ):
+            raise ValueError("invalid RPG progress field: notes")
+        notes.append(
+            RpgNote(
+                id=note_id,
+                created_at=created_at,
+                text=text,
+                tags=_string_list(item.get("tags"), "notes.tags"),
+                linked_task_id=_optional_string(item.get("linked_task_id"), "notes.linked_task_id"),
+                linked_boss_id=_optional_string(item.get("linked_boss_id"), "notes.linked_boss_id"),
+            )
+        )
+    return notes
 
 
 def _level_for(completed_count: int) -> tuple[str, str]:

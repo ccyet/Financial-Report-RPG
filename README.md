@@ -1,23 +1,47 @@
 # Financial Report RPG
 
-一个纯 RPG 化的财报阅读训练应用。
+一个 AI-native 的财报阅读 RPG：用户通过对话记录研究想法、完成任务、升级、存档，并导出当前进度 HTML 和文本汇报。
 
-当前目标是把“读财报”拆成可打卡、可升级、可解锁的研究旅程。
+## 核心方式
 
-## 使用
+主入口是 `skills/financial-report-rpg/SKILL.md`。把这个仓库放进支持本地文件读写的 AI 工作区后，直接和 AI 对话：
+
+- “记录：宁德时代现金流比利润更值得先核对”
+- “完成现金流副本，笔记是经营现金流和净利润要放一起看”
+- “导出当前进度”
+
+AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
+
+- `.local/rpg_exports/progress.md`
+- `.local/rpg_exports/progress.html`
+
+## 本地命令
+
+```bash
+uv run python -m financial_report_rpg.agent_cli status
+uv run python -m financial_report_rpg.agent_cli note --text "先记录一条研究假设" --tag "假设"
+uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
+uv run python -m financial_report_rpg.agent_cli export
+```
+
+## RPG 结构
+
+- 主线战役：7 个章节，从初始印象到画像确认和灵感沉淀。
+- 每日副本：6 个轻量任务，完成后获得 XP 和徽章。
+- Boss 关卡：4 个阶段性输出，完成后解锁世界副本。
+- 世界副本：研究产业在国家价值链中的位置。
+
+## 可选查看器
+
+Streamlit 只作为可选查看器，不是主流程：
 
 ```bash
 uv run streamlit run financial_report_rpg/app/streamlit_app.py
 ```
 
-打开页面后进入 `RPG 旅程`：
+## Notion 预留
 
-- 主线战役：7 个章节，从初始印象到画像确认和灵感沉淀。
-- 每日副本：6 个轻量任务，点击打卡后获得 XP 和徽章。
-- Boss 关卡：4 个阶段性输出，完成后解锁世界副本。
-- 世界副本：研究产业在国家价值链中的位置。
-
-进度保存在本地 `.local/rpg_progress.json`，不会提交到仓库。
+`build_notion_export` 会生成 Notion connector 可用的标题、属性和 Markdown。只有用户提供自己的 Notion 数据库或页面后，才同步远程存档；默认只做本地文件存档。
 
 ## 方案页
 
@@ -33,5 +57,5 @@ uv run ruff check .
 ## 边界
 
 - 不接外部行情或财报服务。
-- 只保留 RPG 进度训练通路。
+- 不伪造财报数据或联网抓取。
 - 不构成投资建议。
