@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>像素 RPG 财报阅读方案页</title>
+  <style>
+    :root {
+      --ink: #10151f;
+      --ink-2: #1d2636;
+      --panel: #f6ead4;
+      --paper: #fff7e8;
+      --line: #2c2b2a;
+      --muted: #685f53;
+      --green: #2f9c5b;
+      --blue: #2c75b9;
+      --gold: #d99521;
+      --red: #c7473f;
+      --violet: #7558b5;
+      --shadow: rgba(16, 21, 31, 0.28);
+      --tile: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
+        #182232;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .pixel-shell {
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      max-width: 1180px;
+      margin: 0 auto 16px;
+      padding: 10px 12px;
+      color: var(--paper);
+      background: rgba(16, 21, 31, 0.92);
+      border: 3px solid #586173;
+      box-shadow: 0 4px 0 #090d14;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      background:
+        linear-gradient(var(--gold), var(--gold)) 6px 2px / 14px 4px no-repeat,
+        linear-gradient(var(--gold), var(--gold)) 2px 6px / 22px 14px no-repeat,
+        linear-gradient(#4d331a, #4d331a) 8px 10px / 4px 4px no-repeat,
+        linear-gradient(#4d331a, #4d331a) 16px 10px / 4px 4px no-repeat,
+        linear-gradient(#f2c35c, #f2c35c) 6px 18px / 14px 4px no-repeat;
+      image-rendering: pixelated;
+      flex: 0 0 auto;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a,
+    .pixel-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 7px 10px;
+      color: var(--paper);
+      text-decoration: none;
+      background: #27344a;
+      border: 2px solid #8792a7;
+      box-shadow: 0 3px 0 #0a0f18;
+      cursor: pointer;
+    }
+
+    .nav a:hover,
+    .pixel-btn:hover {
+      background: #365070;
+    }
+
+    .pixel-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0a0f18;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+      gap: 22px;
+      align-items: stretch;
+      padding: 30px;
+      color: var(--paper);
+      background:
+        linear-gradient(180deg, rgba(18, 36, 56, 0.94), rgba(15, 22, 32, 0.98)),
+        repeating-linear-gradient(90deg, transparent 0 18px, rgba(255, 255, 255, 0.08) 18px 20px);
+      border: 4px solid #8792a7;
+      box-shadow: 0 8px 0 #090d14;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #f0c35d;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 780px;
+      margin-bottom: 16px;
+      font-size: clamp(34px, 7vw, 76px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin-bottom: 14px;
+      font-size: clamp(24px, 4vw, 38px);
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin-bottom: 20px;
+      color: #e6ddcd;
+      font-size: 18px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-actions .pixel-btn {
+      min-width: 144px;
+      background: var(--green);
+      border-color: #91d498;
+    }
+
+    .hero-actions .pixel-btn.secondary {
+      background: var(--blue);
+      border-color: #9bbfe2;
+    }
+
+    .status-board {
+      align-self: stretch;
+      min-width: 0;
+      padding: 18px;
+      color: var(--ink);
+      background: var(--panel);
+      border: 4px solid var(--line);
+      box-shadow: 6px 6px 0 var(--shadow);
+    }
+
+    .avatar-row {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border: 3px solid var(--line);
+      background:
+        linear-gradient(#f1be73, #f1be73) 18px 8px / 28px 12px no-repeat,
+        linear-gradient(#3d2a1d, #3d2a1d) 12px 20px / 40px 8px no-repeat,
+        linear-gradient(#ffd59d, #ffd59d) 16px 28px / 32px 20px no-repeat,
+        linear-gradient(#1a1c24, #1a1c24) 22px 34px / 6px 6px no-repeat,
+        linear-gradient(#1a1c24, #1a1c24) 36px 34px / 6px 6px no-repeat,
+        linear-gradient(var(--blue), var(--blue)) 12px 48px / 40px 10px no-repeat,
+        #9bc7d8;
+      image-rendering: pixelated;
+    }
+
+    .status-board strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .meter {
+      margin: 12px 0;
+    }
+
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .meter-track {
+      height: 18px;
+      margin-top: 5px;
+      background: #d7c7a8;
+      border: 3px solid var(--line);
+      box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .meter-fill {
+      width: 0;
+      height: 100%;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--green) 0 12px,
+        #52bd73 12px 24px
+      );
+      transition: width 220ms ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 8px;
+      background: var(--paper);
+      border: 2px solid var(--line);
+      text-align: center;
+    }
+
+    .stat b {
+      display: block;
+      color: var(--red);
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .section {
+      margin-top: 26px;
+      padding: 28px;
+      background: var(--paper);
+      border: 4px solid var(--line);
+      box-shadow: 0 8px 0 rgba(0, 0, 0, 0.32);
+    }
+
+    .section.dark {
+      color: var(--paper);
+      background: #182232;
+      border-color: #778196;
+    }
+
+    .section-lead {
+      max-width: 840px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .dark .section-lead {
+      color: #cbd3df;
+    }
+
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .map-tile {
+      min-height: 156px;
+      padding: 12px;
+      color: var(--ink);
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.42) 25%, transparent 25%) 0 0 / 20px 20px,
+        #d4ead1;
+      border: 3px solid var(--line);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .map-tile:nth-child(2) {
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.36) 25%, transparent 25%) 0 0 / 20px 20px,
+        #d5e0f2;
+    }
+
+    .map-tile:nth-child(3) {
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.36) 25%, transparent 25%) 0 0 / 20px 20px,
+        #eee4c0;
+    }
+
+    .map-tile:nth-child(4) {
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.36) 25%, transparent 25%) 0 0 / 20px 20px,
+        #e0d7ee;
+    }
+
+    .map-tile:nth-child(5) {
+      background:
+        linear-gradient(45deg, rgba(255,255,255,0.36) 25%, transparent 25%) 0 0 / 20px 20px,
+        #f0d1bd;
+    }
+
+    .map-icon {
+      width: 42px;
+      height: 42px;
+      margin-bottom: 8px;
+      border: 3px solid var(--line);
+      background:
+        linear-gradient(var(--blue), var(--blue)) 8px 6px / 22px 12px no-repeat,
+        linear-gradient(var(--green), var(--green)) 6px 20px / 28px 8px no-repeat,
+        linear-gradient(var(--gold), var(--gold)) 14px 30px / 12px 6px no-repeat,
+        #fff6da;
+      image-rendering: pixelated;
+    }
+
+    .map-tile h3,
+    .mission-card h3,
+    .boss-card h3 {
+      line-height: 1.25;
+    }
+
+    .map-tile p {
+      margin-bottom: 0;
+      color: #4b4a45;
+      font-size: 14px;
+    }
+
+    .campaign {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .chapter {
+      position: relative;
+      min-height: 164px;
+      padding: 13px 12px 12px;
+      background: #f7db9f;
+      border: 3px solid var(--line);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .chapter::after {
+      content: "";
+      position: absolute;
+      top: 42px;
+      right: -15px;
+      width: 15px;
+      height: 6px;
+      background: var(--line);
+    }
+
+    .chapter:last-child::after {
+      display: none;
+    }
+
+    .chapter-number {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 2px 8px;
+      color: var(--paper);
+      background: var(--red);
+      border: 2px solid var(--line);
+      font-weight: 800;
+    }
+
+    .chapter p {
+      margin-bottom: 0;
+      color: #514538;
+      font-size: 14px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+      gap: 20px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .mission-grid,
+    .boss-grid,
+    .company-grid,
+    .badge-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mission-grid {
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+
+    .mission-card,
+    .boss-card,
+    .company-card,
+    .badge {
+      background: var(--panel);
+      border: 3px solid var(--line);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .mission-card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 188px;
+      padding: 14px;
+    }
+
+    .mission-card.done {
+      background: #d7f0d7;
+    }
+
+    .mission-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .mission-card p {
+      color: #4c463d;
+    }
+
+    .mission-card .pixel-btn {
+      width: 100%;
+      color: var(--paper);
+      background: var(--violet);
+      border-color: #c8b9f0;
+    }
+
+    .mission-card.done .pixel-btn {
+      background: var(--green);
+      border-color: #a7dda6;
+    }
+
+    .sample-panel {
+      padding: 16px;
+      background: #f1f6fd;
+      border: 3px solid var(--line);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .sample-panel .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 3px 8px;
+      color: var(--paper);
+      background: var(--blue);
+      border: 2px solid var(--line);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .metric-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .metric {
+      padding: 10px;
+      background: #fff;
+      border: 2px solid var(--line);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .metric b {
+      color: var(--red);
+      font-size: 20px;
+    }
+
+    .boss-grid {
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      margin-top: 16px;
+    }
+
+    .boss-card {
+      padding: 16px;
+      color: var(--paper);
+      background:
+        linear-gradient(#293650, #293650) 0 0 / 100% 100% no-repeat,
+        #293650;
+      border-color: #94a2bb;
+    }
+
+    .boss-card h3 {
+      color: #f0c35d;
+    }
+
+    .boss-card p {
+      margin-bottom: 0;
+      color: #d7deea;
+    }
+
+    .company-grid {
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      margin-top: 16px;
+    }
+
+    .company-card {
+      padding: 14px;
+      min-height: 150px;
+    }
+
+    .company-card.featured {
+      background: #e2f0ff;
+    }
+
+    .company-card .company-code {
+      display: inline-block;
+      margin-bottom: 8px;
+      padding: 2px 6px;
+      color: var(--paper);
+      background: var(--ink-2);
+      border: 2px solid var(--line);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .company-card p {
+      margin-bottom: 0;
+      color: #514b43;
+      font-size: 14px;
+    }
+
+    .badge-grid {
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      margin-top: 16px;
+    }
+
+    .badge {
+      min-height: 132px;
+      padding: 14px;
+      text-align: center;
+      filter: grayscale(1);
+      opacity: 0.62;
+    }
+
+    .badge.unlocked {
+      filter: none;
+      opacity: 1;
+      background: #fff2c4;
+    }
+
+    .badge-icon {
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 8px;
+      background:
+        linear-gradient(var(--gold), var(--gold)) 12px 2px / 18px 10px no-repeat,
+        linear-gradient(var(--gold), var(--gold)) 6px 12px / 30px 22px no-repeat,
+        linear-gradient(#8a5b1f, #8a5b1f) 14px 18px / 5px 5px no-repeat,
+        linear-gradient(#8a5b1f, #8a5b1f) 24px 18px / 5px 5px no-repeat,
+        linear-gradient(#fff0a0, #fff0a0) 13px 30px / 16px 4px no-repeat;
+      border: 3px solid var(--line);
+      image-rendering: pixelated;
+    }
+
+    .badge h3 {
+      margin-bottom: 4px;
+      font-size: 16px;
+    }
+
+    .badge p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-note {
+      margin: 24px 0 0;
+      color: #d3d8e1;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .reset-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    .reset-row .pixel-btn {
+      background: #4b5363;
+      border-color: #a1a8b6;
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .map-grid,
+      .campaign {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .chapter::after {
+        display: none;
+      }
+
+      .boss-grid,
+      .company-grid,
+      .badge-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .pixel-shell {
+        padding: 10px;
+      }
+
+      .top-bar {
+        position: static;
+        align-items: flex-start;
+      }
+
+      .brand {
+        white-space: normal;
+      }
+
+      .nav {
+        display: none;
+      }
+
+      .hero,
+      .section {
+        padding: 18px;
+      }
+
+      .map-grid,
+      .campaign,
+      .mission-grid,
+      .boss-grid,
+      .company-grid,
+      .badge-grid,
+      .metric-list,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-actions .pixel-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="pixel-shell">
+    <header class="top-bar" aria-label="页面导航">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>财报灵感 RPG 方案页</span>
+      </div>
+      <nav class="nav" aria-label="章节跳转">
+        <a href="#world">世界地图</a>
+        <a href="#campaign">主线战役</a>
+        <a href="#daily">每日副本</a>
+        <a href="#boss">Boss 关卡</a>
+        <a href="#achievements">成就墙</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">PROJECT CONCEPT / 像素 RPG 化财报研究</p>
+          <h1>把读财报做成可升级、可打卡、可通关的研究旅程</h1>
+          <p class="hero-copy">
+            目标不是把行业粗暴分类，而是把产业研究拆成一张张地图、一个个副本和一组组小任务。
+            用户每天推进一点，逐步从“看懂一家公司”升级到“理解一条产业链”，最后沉淀自己的投资灵感库。
+          </p>
+          <div class="hero-actions">
+            <a class="pixel-btn" href="#daily">开始每日副本</a>
+            <a class="pixel-btn secondary" href="#campaign">查看主线战役</a>
+          </div>
+        </div>
+
+        <aside class="status-board" aria-label="研究者状态">
+          <div class="avatar-row">
+            <div class="avatar" aria-hidden="true"></div>
+            <div>
+              <strong id="levelTitle">Lv.1 财报新兵</strong>
+              <span id="levelDesc">完成每日副本，解锁研究徽章。</span>
+            </div>
+          </div>
+          <div class="meter">
+            <div class="meter-label">
+              <span>研究经验</span>
+              <span id="xpText">0 / 120 XP</span>
+            </div>
+            <div class="meter-track" aria-hidden="true">
+              <div class="meter-fill" id="xpFill"></div>
+            </div>
+          </div>
+          <div class="meter">
+            <div class="meter-label">
+              <span>今日副本进度</span>
+              <span id="dailyText">0 / 6</span>
+            </div>
+            <div class="meter-track" aria-hidden="true">
+              <div class="meter-fill" id="dailyFill"></div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><b id="statTasks">0</b><span>已打卡</span></div>
+            <div class="stat"><b id="statBadges">0</b><span>徽章</span></div>
+            <div class="stat"><b id="statMaps">1</b><span>地图</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section" id="world">
+        <h2>世界地图：行业是场景，不是目录</h2>
+        <p class="section-lead">
+          地图承载研究场景。每个产业地图都有自己的关键问题、财报线索和高频观察点，
+          用户进入地图后再通过任务卡推进，而不是只按行业列表翻报告。
+        </p>
+        <div class="map-grid">
+          <article class="map-tile">
+            <div class="map-icon" aria-hidden="true"></div>
+            <h3>动力电池峡谷</h3>
+            <p>围绕宁德时代、亿纬锂能、欣旺达，追踪出货、价格、毛利率和现金流质量。</p>
+          </article>
+          <article class="map-tile">
+            <div class="map-icon" aria-hidden="true"></div>
+            <h3>整车竞技场</h3>
+            <p>比较比亚迪、赛力斯、长城汽车，拆销量、ASP、单车利润和渠道效率。</p>
+          </article>
+          <article class="map-tile">
+            <div class="map-icon" aria-hidden="true"></div>
+            <h3>半导体矿洞</h3>
+            <p>观察设备、材料、设计公司的库存周期、订单能见度和国产替代节奏。</p>
+          </article>
+          <article class="map-tile">
+            <div class="map-icon" aria-hidden="true"></div>
+            <h3>光伏沙海</h3>
+            <p>从价格、开工率、减值和现金流入手，识别周期底部和真实出清。</p>
+          </article>
+          <article class="map-tile">
+            <div class="map-icon" aria-hidden="true"></div>
+            <h3>机器人城邦</h3>
+            <p>把零部件、整机、应用场景拆成任务链，追踪商业化里程碑。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section dark" id="campaign">
+        <h2>主线战役：从看一家公司到理解产业链</h2>
+        <p class="section-lead">
+          主线不追求一次读完全部财报，而是把复杂研究拆成六个连续关卡。每个关卡有明确输出，
+          用户完成后获得经验值，并解锁下一层研究问题。
+        </p>
+        <div class="campaign">
+          <article class="chapter">
+            <span class="chapter-number">第 1 章</span>
+            <h3>公司画像</h3>
+            <p>一句话说清公司赚什么钱、客户是谁、产业位置在哪里。</p>
+          </article>
+          <article class="chapter">
+            <span class="chapter-number">第 2 章</span>
+            <h3>收入结构</h3>
+            <p>拆产品、区域、客户和量价变化，找到增长来自哪里。</p>
+          </article>
+          <article class="chapter">
+            <span class="chapter-number">第 3 章</span>
+            <h3>利润质量</h3>
+            <p>看毛利率、费用率、扣非利润和非经常性损益的真实贡献。</p>
+          </article>
+          <article class="chapter">
+            <span class="chapter-number">第 4 章</span>
+            <h3>现金与资产</h3>
+            <p>用经营现金流、应收、存货和合同负债判断增长含金量。</p>
+          </article>
+          <article class="chapter">
+            <span class="chapter-number">第 5 章</span>
+            <h3>产业对比</h3>
+            <p>放到同产业头部公司里比较，识别强弱、周期和分化。</p>
+          </article>
+          <article class="chapter">
+            <span class="chapter-number">第 6 章</span>
+            <h3>灵感沉淀</h3>
+            <p>把结论、反证信号和后续跟踪动作写入个人研究日志。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="daily">
+        <h2>每日副本：每次只推进一个小胜利</h2>
+        <p class="section-lead">
+          点击任务卡即可打卡。这里不要求用户输入内容，重点是让研究动作变得明确、轻量、有反馈。
+        </p>
+        <div class="split">
+          <div class="mission-grid" aria-label="每日任务卡">
+            <article class="mission-card" data-task="mdna">
+              <div class="mission-meta"><span>每日副本 01</span><span>20 XP</span></div>
+              <h3>读一页管理层讨论</h3>
+              <p>只找管理层对收入、价格、需求、产能或客户结构的解释。</p>
+              <button class="pixel-btn task-toggle" type="button">打卡</button>
+            </article>
+            <article class="mission-card" data-task="profit">
+              <div class="mission-meta"><span>每日副本 02</span><span>20 XP</span></div>
+              <h3>找一个利润变化原因</h3>
+              <p>判断利润变化来自收入、毛利率、费用、减值还是非经常性项目。</p>
+              <button class="pixel-btn task-toggle" type="button">打卡</button>
+            </article>
+            <article class="mission-card" data-task="cash">
+              <div class="mission-meta"><span>每日副本 03</span><span>20 XP</span></div>
+              <h3>核对现金流含金量</h3>
+              <p>比较经营现金流与归母净利润，找是否存在利润好但现金弱。</p>
+              <button class="pixel-btn task-toggle" type="button">打卡</button>
+            </article>
+            <article class="mission-card" data-task="compare">
+              <div class="mission-meta"><span>每日副本 04</span><span>20 XP</span></div>
+              <h3>对比一个产业同伴</h3>
+              <p>把同产业另一家公司加入对照，观察收入增速、毛利率和库存差异。</p>
+              <button class="pixel-btn task-toggle" type="button">打卡</button>
+            </article>
+            <article class="mission-card" data-task="risk">
+              <div class="mission-meta"><span>每日副本 05</span><span>20 XP</span></div>
+              <h3>记录一个反证信号</h3>
+              <p>主动寻找可能推翻结论的信号：价格下行、应收走高、订单变弱。</p>
+              <button class="pixel-btn task-toggle" type="button">打卡</button>
+            </article>
+            <article class="mission-card" data-task="idea">
+              <div class="mission-meta"><span>每日副本 06</span><span>20 XP</span></div>
+              <h3>沉淀一个投资灵感</h3>
+              <p>把今天最值得跟踪的业务变化，归档成后续可复盘的研究线索。</p>
+              <button class="pixel-btn task-toggle" type="button">打卡</button>
+            </article>
+          </div>
+
+          <aside class="sample-panel" aria-label="宁德时代半真实样例">
+            <span class="tag">真实样例入口：300750.SZ 宁德时代</span>
+            <h3>2025Q4 财报副本可用线索</h3>
+            <p>
+              现有报告显示，宁德时代 2025Q4 被判定为收入驱动型增长。
+              这个样例用于演示“从财报指标进入任务卡”的产品方向。
+            </p>
+            <div class="metric-list">
+              <div class="metric"><span>收入同比</span><b>36.58%</b></div>
+              <div class="metric"><span>扣非净利同比</span><b>62.98%</b></div>
+              <div class="metric"><span>毛利率</span><b>28.21%</b></div>
+              <div class="metric"><span>经营现金流 / 归母净利</span><b>2.27</b></div>
+            </div>
+            <p>
+              对应任务：验证收入增长来源、拆毛利率贡献、核对现金流质量、
+              记录高频数据不足这一反证信号。
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section dark" id="boss">
+        <h2>Boss 关卡：阶段性输出才算通关</h2>
+        <p class="section-lead">
+          每日副本负责养成习惯，Boss 关卡负责逼出阶段性成果。用户完成 Boss 后，才真正从“看过”
+          进入“形成结构化理解”。
+        </p>
+        <div class="boss-grid">
+          <article class="boss-card">
+            <h3>三年财报地图</h3>
+            <p>完成一家龙头公司三年收入、利润、现金流和资产负债地图。</p>
+          </article>
+          <article class="boss-card">
+            <h3>三家公司横向对战</h3>
+            <p>完成同产业三家头部企业对比，说明谁在扩张、谁在承压。</p>
+          </article>
+          <article class="boss-card">
+            <h3>产业灵感日志</h3>
+            <p>沉淀一条产业变化线索，列出支持证据、反证信号和下次跟踪动作。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="companies">
+        <h2>头部企业卡池：先聚合，再进入副本</h2>
+        <p class="section-lead">
+          卡池用于承接产业头部企业。第一版不联网抓取最新财报，只展示可进入的研究对象；
+          后续可接现有 Python 分析链路，把真实报告结果映射到任务状态。
+        </p>
+        <div class="company-grid">
+          <article class="company-card featured">
+            <span class="company-code">300750.SZ</span>
+            <h3>宁德时代</h3>
+            <p>动力电池主线样例，已有半真实指标和财报报告。</p>
+          </article>
+          <article class="company-card">
+            <span class="company-code">002594.SZ</span>
+            <h3>比亚迪</h3>
+            <p>整车竞技场样例，适合拆销量、单车利润和垂直整合。</p>
+          </article>
+          <article class="company-card">
+            <span class="company-code">688981.SH</span>
+            <h3>中芯国际</h3>
+            <p>半导体矿洞样例，适合观察周期、产能和国产替代。</p>
+          </article>
+          <article class="company-card">
+            <span class="company-code">601012.SH</span>
+            <h3>隆基绿能</h3>
+            <p>光伏沙海样例，适合跟踪价格、库存、减值和现金流。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="achievements">
+        <h2>成就墙：让阅读进度被看见</h2>
+        <p class="section-lead">
+          徽章不代表投资结论正确，只代表用户完成了结构化研究动作。这样能把“读财报”从一次性苦活，
+          变成持续可推进的学习系统。
+        </p>
+        <div class="badge-grid">
+          <article class="badge" data-badge="starter">
+            <div class="badge-icon" aria-hidden="true"></div>
+            <h3>首日开荒</h3>
+            <p>完成 1 个每日副本后解锁。</p>
+          </article>
+          <article class="badge" data-badge="analyst">
+            <div class="badge-icon" aria-hidden="true"></div>
+            <h3>指标猎手</h3>
+            <p>完成 3 个每日副本后解锁。</p>
+          </article>
+          <article class="badge" data-badge="chain">
+            <div class="badge-icon" aria-hidden="true"></div>
+            <h3>产业行者</h3>
+            <p>完成 5 个每日副本后解锁。</p>
+          </article>
+          <article class="badge" data-badge="boss">
+            <div class="badge-icon" aria-hidden="true"></div>
+            <h3>副本通关</h3>
+            <p>完成全部每日副本后解锁。</p>
+          </article>
+        </div>
+        <div class="reset-row">
+          <button class="pixel-btn" id="resetProgress" type="button">重置打卡进度</button>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        本页面仅为产品方案解读与交互原型，不构成投资建议；示例数据来自本地已有研究报告。
+      </p>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "financial-rpg-plan-progress-v1";
+    const taskCards = Array.from(document.querySelectorAll("[data-task]"));
+    const badgeCards = Array.from(document.querySelectorAll("[data-badge]"));
+    const buttons = Array.from(document.querySelectorAll(".task-toggle"));
+    const xpPerTask = 20;
+    const maxXp = taskCards.length * xpPerTask;
+
+    const defaultState = { completedTasks: [] };
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (!saved || !Array.isArray(saved.completedTasks)) {
+          return { ...defaultState };
+        }
+        return {
+          completedTasks: saved.completedTasks.filter((task) =>
+            taskCards.some((card) => card.dataset.task === task)
+          ),
+        };
+      } catch {
+        return { ...defaultState };
+      }
+    }
+
+    function saveState(state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function levelFor(completedCount) {
+      if (completedCount >= 6) {
+        return ["Lv.4 产业副本通关者", "全部每日副本已完成，可以挑战 Boss 关卡。"];
+      }
+      if (completedCount >= 4) {
+        return ["Lv.3 产业链探索者", "已经能把单家公司放进产业场景里比较。"];
+      }
+      if (completedCount >= 2) {
+        return ["Lv.2 指标观察员", "开始从收入、利润和现金流里找线索。"];
+      }
+      return ["Lv.1 财报新兵", "完成每日副本，解锁研究徽章。"];
+    }
+
+    function unlockedBadges(completedCount) {
+      return {
+        starter: completedCount >= 1,
+        analyst: completedCount >= 3,
+        chain: completedCount >= 5,
+        boss: completedCount >= 6,
+      };
+    }
+
+    function render() {
+      const state = loadState();
+      const completed = new Set(state.completedTasks);
+      const completedCount = completed.size;
+      const xp = completedCount * xpPerTask;
+      const progress = Math.round((completedCount / taskCards.length) * 100);
+      const [levelTitle, levelDesc] = levelFor(completedCount);
+      const badges = unlockedBadges(completedCount);
+      const badgeCount = Object.values(badges).filter(Boolean).length;
+
+      taskCards.forEach((card) => {
+        const isDone = completed.has(card.dataset.task);
+        card.classList.toggle("done", isDone);
+        const button = card.querySelector(".task-toggle");
+        button.textContent = isDone ? "已打卡" : "打卡";
+        button.setAttribute("aria-pressed", String(isDone));
+      });
+
+      badgeCards.forEach((badge) => {
+        badge.classList.toggle("unlocked", Boolean(badges[badge.dataset.badge]));
+      });
+
+      document.getElementById("levelTitle").textContent = levelTitle;
+      document.getElementById("levelDesc").textContent = levelDesc;
+      document.getElementById("xpText").textContent = `${xp} / ${maxXp} XP`;
+      document.getElementById("xpFill").style.width = `${progress}%`;
+      document.getElementById("dailyText").textContent = `${completedCount} / ${taskCards.length}`;
+      document.getElementById("dailyFill").style.width = `${progress}%`;
+      document.getElementById("statTasks").textContent = String(completedCount);
+      document.getElementById("statBadges").textContent = String(badgeCount);
+      document.getElementById("statMaps").textContent = completedCount >= 5 ? "3" : completedCount >= 2 ? "2" : "1";
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const card = button.closest("[data-task]");
+        const task = card.dataset.task;
+        const state = loadState();
+        const completed = new Set(state.completedTasks);
+        if (completed.has(task)) {
+          completed.delete(task);
+        } else {
+          completed.add(task);
+        }
+        saveState({ completedTasks: Array.from(completed) });
+        render();
+      });
+    });
+
+    document.getElementById("resetProgress").addEventListener("click", () => {
+      saveState({ ...defaultState });
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
