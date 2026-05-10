@@ -384,7 +384,7 @@
 
     .campaign {
       display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      grid-template-columns: repeat(7, minmax(112px, 1fr));
       gap: 12px;
       margin-top: 20px;
     }
@@ -425,6 +425,51 @@
     .chapter p {
       margin-bottom: 0;
       color: #514538;
+      font-size: 14px;
+    }
+
+    .bridge-panel {
+      margin-top: 20px;
+      padding: 18px;
+      color: var(--ink);
+      background: #edf3fb;
+      border: 3px solid #94a2bb;
+      box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.22);
+    }
+
+    .bridge-panel h3 {
+      margin-bottom: 6px;
+    }
+
+    .bridge-panel > p {
+      max-width: 850px;
+      color: #475160;
+    }
+
+    .bridge-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .bridge-card {
+      min-height: 142px;
+      padding: 12px;
+      background: var(--paper);
+      border: 2px solid var(--line);
+    }
+
+    .bridge-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--blue);
+      font-size: 15px;
+    }
+
+    .bridge-card p {
+      margin-bottom: 0;
+      color: #4c463d;
       font-size: 14px;
     }
 
@@ -670,7 +715,8 @@
 
       .boss-grid,
       .company-grid,
-      .badge-grid {
+      .badge-grid,
+      .bridge-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -704,6 +750,7 @@
       .boss-grid,
       .company-grid,
       .badge-grid,
+      .bridge-grid,
       .metric-list,
       .stats {
         grid-template-columns: 1fr;
@@ -818,14 +865,14 @@
       <section class="section dark" id="campaign">
         <h2>主线战役：从看一家公司到理解产业链</h2>
         <p class="section-lead">
-          主线不追求一次读完全部财报，而是把复杂研究拆成六个连续关卡。每个关卡有明确输出，
-          用户完成后获得经验值，并解锁下一层研究问题。
+          主线不追求一次读完全部财报，而是把复杂研究拆成七个连续关卡。前期先记录第一印象，
+          中段用财报证据验证和修正，最终沉淀前再确认公司画像。
         </p>
         <div class="campaign">
           <article class="chapter">
             <span class="chapter-number">第 1 章</span>
-            <h3>公司画像</h3>
-            <p>一句话说清公司赚什么钱、客户是谁、产业位置在哪里。</p>
+            <h3>初始印象</h3>
+            <p>先写下对公司业务、客户和产业位置的第一判断，作为后续验证对象。</p>
           </article>
           <article class="chapter">
             <span class="chapter-number">第 2 章</span>
@@ -849,9 +896,40 @@
           </article>
           <article class="chapter">
             <span class="chapter-number">第 6 章</span>
+            <h3>画像确认</h3>
+            <p>回到第一印象，依据财报证据修正公司到底靠什么赚钱。</p>
+          </article>
+          <article class="chapter">
+            <span class="chapter-number">第 7 章</span>
             <h3>灵感沉淀</h3>
             <p>把结论、反证信号和后续跟踪动作写入个人研究日志。</p>
           </article>
+        </div>
+
+        <div class="bridge-panel">
+          <h3>章节达成机制：目标不是看完，而是产出可检查的研究件</h3>
+          <p>
+            每一章都由“章节目标、最小任务、可见产物、解锁条件”承接。用户不需要在本方案页输入内容；
+            最终产品里，每张任务卡会对应一个可打卡产物，完成后再推进下一章。
+          </p>
+          <div class="bridge-grid">
+            <article class="bridge-card">
+              <strong>1. 初始印象卡</strong>
+              <p>读公司简介和摘要，留下待验证判断：卖什么、卖给谁、为什么可能变化。</p>
+            </article>
+            <article class="bridge-card">
+              <strong>2. 财报证据卡</strong>
+              <p>收入、利润、现金流每章至少完成一张证据卡，明确支持或推翻什么判断。</p>
+            </article>
+            <article class="bridge-card">
+              <strong>3. 产业参照卡</strong>
+              <p>进入分支地图后，用同产业头部公司做横向参照，识别强弱和周期位置。</p>
+            </article>
+            <article class="bridge-card">
+              <strong>4. 画像确认卡</strong>
+              <p>最终沉淀前先修正公司画像，再把可靠结论、反证信号和下次跟踪动作归档。</p>
+            </article>
+          </div>
         </div>
       </section>
 
