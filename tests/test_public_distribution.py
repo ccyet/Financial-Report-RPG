@@ -14,7 +14,9 @@ def test_root_skill_is_public_entrypoint():
     assert "name: financial-report-rpg" in content
     assert "pyproject.toml" in content
     assert "uv run python -m financial_report_rpg.agent_cli next" in content
+    assert "uv run python -m financial_report_rpg.agent_cli start" in content
     assert "不要只复制 `skills/financial-report-rpg/`" in content
+    assert "不展示存储路径" in content
 
 
 def test_workspace_skill_points_to_root_entrypoint():

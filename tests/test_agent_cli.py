@@ -62,3 +62,42 @@ def test_agent_cli_guides_and_completes_chapter_check_ins(tmp_path: Path):
     assert progress.completed_chapters == {"first_impression"}
     assert progress.notes[0].linked_chapter_id == "first_impression"
     assert progress.notes[0].linked_task_id is None
+
+
+def test_agent_cli_start_guides_from_saved_progress_and_dungeon(tmp_path: Path):
+    progress_path = tmp_path / "progress.json"
+    report_dir = tmp_path / "exports"
+
+    output = run_command(
+        ["start", "--dungeon", "半导体矿洞"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+
+    progress = load_progress(progress_path, default_journey())
+    assert progress.active_dungeon == "半导体矿洞"
+    assert "读取存档" in output
+    assert "等级 1/175" in output
+    assert "本次挑战副本：半导体矿洞" in output
+    assert "副本进度：主线 0/50" in output
+    assert "确认本次是否挑战该副本" in output
+    assert ".local" not in output
+    assert "progress.html" not in output
+
+
+def test_agent_cli_completion_is_immersive_and_hides_storage_paths(tmp_path: Path):
+    progress_path = tmp_path / "progress.json"
+    report_dir = tmp_path / "exports"
+
+    output = run_command(
+        ["complete-chapter", "first_impression", "--note", "第一关完成。"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+
+    assert "关卡结算" in output
+    assert "等级 2/175" in output
+    assert "主线 1/50" in output
+    assert "若当前终端支持图片" in output
+    assert ".local" not in output
+    assert "progress.html" not in output

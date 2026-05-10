@@ -54,7 +54,9 @@ def test_reports_include_current_progress_notes_and_no_user_inputs():
     text_report = generate_text_report(progress, journey)
     html_report = generate_html_report(progress, journey)
 
-    assert "Lv.1 财报新兵" in text_report
+    assert "Lv.2/175 财报新兵" in text_report
+    assert "主线关卡：0/50" in text_report
+    assert "Boss 关卡：1/99" in text_report
     assert "三年财报地图" in text_report
     assert "先把应收、存货和经营现金流放进一张地图。" in text_report
     assert "<!doctype html>" in html_report.lower()
@@ -63,6 +65,8 @@ def test_reports_include_current_progress_notes_and_no_user_inputs():
     assert "<textarea" not in html_report.lower()
     assert "当前关卡" in text_report
     assert "通关标准" in html_report
+    assert "Lv.2/175" in html_report
+    assert "1/99" in html_report
 
 
 def test_next_check_in_guides_chapter_by_chapter():
@@ -121,6 +125,6 @@ def test_notion_export_is_connector_ready():
     payload = build_notion_export(progress, journey)
 
     assert payload["title"] == "财报 RPG 当前进度"
-    assert payload["properties"]["level"] == "Lv.1 财报新兵"
+    assert payload["properties"]["level"] == "Lv.1/175 财报新兵"
     assert payload["properties"]["daily_completed"] == 0
     assert "需要在产业链里确认国产替代位置。" in payload["markdown"]

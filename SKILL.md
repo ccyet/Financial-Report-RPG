@@ -20,13 +20,14 @@ version: 2026.05.10
 
 # 引导式闯关流程
 
-1. 先读取现有进度。若状态文件不存在，视为新档。
+1. 每次启动先运行 `start`，用游戏风格启动引导词告知此前存档进度、等级，并确认本次要挑战的行业副本。
 2. 用 `next_check_in` 找到当前关卡，向用户提出一个引导问题。
 3. 用户回答后，先用 `record_note` 保存原始想法。
 4. 按当前关卡的通关标准检查回答：满足标准才打卡；不满足标准就继续追问缺失部分。
 5. 主线关卡用 `complete-chapter` 打卡，每日副本用 `complete-task` 打卡，Boss 关卡用 `complete-boss` 打卡。
 6. 每次状态变化后保存 `.local/rpg_progress.json`，并导出 `.local/rpg_exports/progress.md` 和 `.local/rpg_exports/progress.html`。
-7. 回复只给当前关卡、是否通过、缺什么、下一步和报告路径。
+7. 关卡结束时不展示存储路径等无关信息；保持沉浸式游戏语气，只给等级、主线进度、Boss 进度和下一关。
+8. 若用户模型或终端支持图片，发送 HTML 中等级与进度区域的截图；不支持图片时，用游戏风格文字告知当前结算。
 
 # 关卡检验标准
 
@@ -39,8 +40,11 @@ version: 2026.05.10
 # 常用命令
 
 ```bash
+uv run python -m financial_report_rpg.agent_cli start
+uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
 uv run python -m financial_report_rpg.agent_cli status
 uv run python -m financial_report_rpg.agent_cli next
+uv run python -m financial_report_rpg.agent_cli set-dungeon "半导体矿洞"
 uv run python -m financial_report_rpg.agent_cli note --text "记录一条研究想法" --tag "现金流"
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
@@ -71,4 +75,4 @@ Notion 只作为预留接口：用户明确提供数据库或页面后，再把 
 - 当前关卡和通关标准
 - 本轮是否通过；未通过时只说缺哪一项
 - 通过后的新记录或新通关内容
-- `.local/rpg_exports/progress.md` 与 `.local/rpg_exports/progress.html`
+- 关卡结束不展示存储路径；需要导出时才说明 `.local/rpg_exports/progress.md` 与 `.local/rpg_exports/progress.html`

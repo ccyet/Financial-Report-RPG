@@ -36,6 +36,7 @@ openclaw gateway restart
 把这个仓库放进支持文件读写和命令执行的 AI 工作区后，直接和 AI 对话：
 
 - “开启财报 RPG，给我当前关卡”
+- “本次挑战半导体矿洞”
 - “记录：宁德时代现金流比利润更值得先核对”
 - “我回答完了，按标准看能不能打卡”
 - “完成现金流副本，笔记是经营现金流和净利润要放一起看”
@@ -51,8 +52,11 @@ AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
 所有命令都从仓库根目录运行：
 
 ```bash
+uv run python -m financial_report_rpg.agent_cli start
+uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
 uv run python -m financial_report_rpg.agent_cli status
 uv run python -m financial_report_rpg.agent_cli next
+uv run python -m financial_report_rpg.agent_cli set-dungeon "半导体矿洞"
 uv run python -m financial_report_rpg.agent_cli note --text "先记录一条研究假设" --tag "假设"
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
@@ -65,6 +69,9 @@ uv run python -m financial_report_rpg.agent_cli export
 - 每日副本：6 个轻量打卡任务，完成后获得 XP 和徽章。
 - Boss 关卡：4 个阶段性输出，必须满足检验标准后才通关。
 - 世界副本：研究产业在国家价值链中的位置。
+- 进度上限：等级 175，主线 50，Boss 99。
+
+关卡结束时，agent 不应向用户展示存储路径；优先用游戏结算语气输出等级、主线进度、Boss 进度。若当前终端支持图片，应展示 HTML 等级与进度区域截图；不支持图片时，用文字状态面板替代。
 
 ## 可选查看器
 

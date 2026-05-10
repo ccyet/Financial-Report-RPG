@@ -63,7 +63,7 @@ def _render_rpg_status(progress: RpgProgress, journey: RpgJourney) -> None:
 
     summary = summarize_progress(progress, journey)
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("等级", summary.level_title)
+    k1.metric("等级", f"Lv.{summary.level}/{summary.max_level} {summary.level_title}")
     k2.metric("研究经验", f"{summary.xp}/{summary.max_xp} XP")
     k3.metric("每日副本", f"{summary.daily_completed}/{summary.daily_total}")
     k4.metric("Boss 关卡", f"{summary.boss_completed}/{summary.boss_total}")

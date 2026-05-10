@@ -19,10 +19,14 @@ uv sync
 agent 应先读取 `SKILL.md`，再从仓库根目录运行：
 
 ```bash
-uv run python -m financial_report_rpg.agent_cli next
+uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
 ```
 
-你会看到当前关卡、引导问题、通关标准和打卡命令。
+你会看到存档进度、等级、当前行业副本、当前关卡和引导问题。确认副本后，继续查看关卡标准：
+
+```bash
+uv run python -m financial_report_rpg.agent_cli next
+```
 
 ## 记录一次回答
 
@@ -53,3 +57,5 @@ uv run python -m financial_report_rpg.agent_cli export
 - `.local/rpg_exports/progress.html`
 
 `.local/` 是个人存档目录，不应提交到 Git。
+
+关卡结束时，agent 不应把这些路径直接抛给用户；如果终端支持图片，展示 HTML 的等级与进度截图，否则用游戏风格文字结算。

@@ -19,19 +19,24 @@ version: 2026.05.10
 
 # 对话流程
 
-1. 用 `uv run python -m financial_report_rpg.agent_cli next` 获取当前关卡、引导问题和通关标准。
-2. 用户回答后，先用 `note` 保存原始想法。
-3. 按通关标准判断是否打卡；不满足标准只追问一个关键缺口。
-4. 主线用 `complete-chapter`，每日副本用 `complete-task`，Boss 用 `complete-boss`。
-5. 每次状态变化后运行 `export`，生成文本和 HTML 进度报告。
+1. 每次启动先用 `uv run python -m financial_report_rpg.agent_cli start` 输出启动引导词，读取存档、等级和当前行业副本。
+2. 用 `uv run python -m financial_report_rpg.agent_cli next` 获取当前关卡、引导问题和通关标准。
+3. 用户回答后，先用 `note` 保存原始想法。
+4. 按通关标准判断是否打卡；不满足标准只追问一个关键缺口。
+5. 主线用 `complete-chapter`，每日副本用 `complete-task`，Boss 用 `complete-boss`。
+6. 每次状态变化后运行 `export`，生成文本和 HTML 进度报告。
+7. 关卡结束后不展示存储路径；若终端支持图片，发送 HTML 等级与进度截图；不支持图片时，用游戏风格文字结算。
 
 对应 Python 接口包括 `record_note`、`next_check_in`、`generate_html_report` 和 `build_notion_export`。Notion 只作为预留接口，用户提供自己的数据库或页面后再写入。
 
 # 常用命令
 
 ```bash
+uv run python -m financial_report_rpg.agent_cli start
+uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
 uv run python -m financial_report_rpg.agent_cli status
 uv run python -m financial_report_rpg.agent_cli next
+uv run python -m financial_report_rpg.agent_cli set-dungeon "半导体矿洞"
 uv run python -m financial_report_rpg.agent_cli note --text "记录一条研究想法" --tag "现金流"
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
@@ -41,4 +46,4 @@ uv run python -m financial_report_rpg.agent_cli export
 
 # 输出格式
 
-每轮状态更新后，优先给当前关卡、通关标准、本轮是否通过、缺口或打卡结果，以及 `.local/rpg_exports/progress.md` / `.local/rpg_exports/progress.html`。
+每轮状态更新后，优先给当前关卡、通关标准、本轮是否通过、缺口或打卡结果。关卡结束不展示存储路径；只有用户明确要求导出时，才说明 `.local/rpg_exports/progress.md` / `.local/rpg_exports/progress.html`。

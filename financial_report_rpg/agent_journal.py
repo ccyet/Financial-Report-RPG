@@ -116,6 +116,7 @@ def complete_boss(progress: RpgProgress, boss_id: str, journey: RpgJourney) -> R
 
 def generate_text_report(progress: RpgProgress, journey: RpgJourney) -> str:
     summary = summarize_progress(progress, journey)
+    level_label = _level_label(summary)
     badges = "、".join(summary.unlocked_badges) if summary.unlocked_badges else "暂无"
     completed_tasks = _completed_task_lines(progress, journey)
     completed_chapters = _completed_chapter_lines(progress, journey)
@@ -128,7 +129,7 @@ def generate_text_report(progress: RpgProgress, journey: RpgJourney) -> str:
         [
             "# 财报 RPG 当前进度",
             "",
-            f"- 等级：{summary.level_title}",
+            f"- 等级：{level_label}",
             f"- 经验：{summary.xp}/{summary.max_xp} XP",
             f"- 主线关卡：{summary.chapter_completed}/{summary.chapter_total}",
             f"- 每日副本：{summary.daily_completed}/{summary.daily_total}",
@@ -164,6 +165,7 @@ def generate_text_report(progress: RpgProgress, journey: RpgJourney) -> str:
 
 def generate_html_report(progress: RpgProgress, journey: RpgJourney) -> str:
     summary = summarize_progress(progress, journey)
+    level_label = _level_label(summary)
     badges = summary.unlocked_badges or ["暂无"]
     world_raid_status = "已解锁" if summary.world_raid_unlocked else "未解锁"
     chapter_metric = f"{summary.chapter_completed}/{summary.chapter_total}"
@@ -177,6 +179,13 @@ def generate_html_report(progress: RpgProgress, journey: RpgJourney) -> str:
     note_cards = _html_cards(_note_lines(progress) or ["暂无对话记录"])
     badge_nodes = "".join(f"<span>{escape(badge)}</span>" for badge in badges)
     criteria_nodes = "".join(f"<li>{escape(criterion)}</li>" for criterion in gate.pass_criteria)
+    progress_bars = "".join(
+        [
+            _progress_bar("等级", summary.level, summary.max_level),
+            _progress_bar("主线", summary.chapter_completed, summary.chapter_total),
+            _progress_bar("Boss", summary.boss_completed, summary.boss_total),
+        ]
+    )
 
     return f"""<!doctype html>
 <html lang="zh-CN">
@@ -235,6 +244,24 @@ def generate_html_report(progress: RpgProgress, journey: RpgJourney) -> str:
       border: 2px solid #1f2937;
       font-weight: 700;
     }}
+    .bar {{
+      margin: 12px 0;
+    }}
+    .bar-label {{
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }}
+    .bar-track {{
+      height: 16px;
+      background: #fef3c7;
+      border: 2px solid #1f2937;
+    }}
+    .bar-fill {{
+      height: 100%;
+      background: #38bdf8;
+    }}
     footer {{
       color: #f9fafb;
       opacity: .85;
@@ -247,12 +274,13 @@ def generate_html_report(progress: RpgProgress, journey: RpgJourney) -> str:
     <section>
       <h1>财报 RPG 当前进度</h1>
       <div class="status">
-        <div class="metric">等级<strong>{escape(summary.level_title)}</strong></div>
+        <div class="metric">等级<strong>{escape(level_label)}</strong></div>
         <div class="metric">经验<strong>{summary.xp}/{summary.max_xp} XP</strong></div>
         <div class="metric">主线关卡<strong>{chapter_metric}</strong></div>
         <div class="metric">每日副本<strong>{daily_metric}</strong></div>
         <div class="metric">Boss 关卡<strong>{boss_metric}</strong></div>
       </div>
+      {progress_bars}
     </section>
     <section>
       <h2>当前关卡</h2>
@@ -308,7 +336,7 @@ def build_notion_export(progress: RpgProgress, journey: RpgJourney) -> dict[str,
     return {
         "title": "财报 RPG 当前进度",
         "properties": {
-            "level": summary.level_title,
+            "level": _level_label(summary),
             "xp": summary.xp,
             "chapter_completed": summary.chapter_completed,
             "daily_completed": summary.daily_completed,
@@ -317,6 +345,21 @@ def build_notion_export(progress: RpgProgress, journey: RpgJourney) -> dict[str,
         },
         "markdown": generate_text_report(progress, journey),
     }
+
+
+def _level_label(summary) -> str:
+    return f"Lv.{summary.level}/{summary.max_level} {summary.level_title}"
+
+
+def _progress_bar(label: str, current: int, total: int) -> str:
+    ratio = 0 if total <= 0 else min(100, round(current / total * 100, 2))
+    return (
+        '<div class="bar">'
+        f'<div class="bar-label"><span>{escape(label)}</span><span>{current}/{total}</span></div>'
+        '<div class="bar-track">'
+        f'<div class="bar-fill" style="width: {ratio}%"></div>'
+        "</div></div>"
+    )
 
 
 def _note_id(text: str, created_at: str) -> str:

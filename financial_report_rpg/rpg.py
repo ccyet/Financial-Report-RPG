@@ -5,6 +5,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+MAX_LEVEL = 175
+MAIN_CHAPTER_CAP = 50
+BOSS_CAP = 99
+
 
 @dataclass(frozen=True)
 class RpgChapter:
@@ -63,6 +67,7 @@ class RpgNote:
 
 @dataclass(frozen=True)
 class RpgProgress:
+    active_dungeon: str | None = None
     completed_chapters: set[str] = field(default_factory=set)
     completed_tasks: set[str] = field(default_factory=set)
     completed_bosses: set[str] = field(default_factory=set)
@@ -71,6 +76,8 @@ class RpgProgress:
 
 @dataclass(frozen=True)
 class RpgProgressSummary:
+    level: int
+    max_level: int
     xp: int
     max_xp: int
     chapter_completed: int
@@ -309,16 +316,19 @@ def summarize_progress(progress: RpgProgress, journey: RpgJourney) -> RpgProgres
     boss_completed = len(progress.completed_bosses & boss_ids)
     xp = sum(task.xp for task in journey.daily_tasks if task.id in progress.completed_tasks)
     max_xp = sum(task.xp for task in journey.daily_tasks)
+    level = min(MAX_LEVEL, 1 + chapter_completed + daily_completed)
     level_title, level_description = _level_for(daily_completed)
     return RpgProgressSummary(
+        level=level,
+        max_level=MAX_LEVEL,
         xp=xp,
         max_xp=max_xp,
         chapter_completed=chapter_completed,
-        chapter_total=len(journey.chapters),
+        chapter_total=MAIN_CHAPTER_CAP,
         daily_completed=daily_completed,
         daily_total=len(journey.daily_tasks),
         boss_completed=boss_completed,
-        boss_total=len(journey.boss_tasks),
+        boss_total=BOSS_CAP,
         level_title=level_title,
         level_description=level_description,
         unlocked_badges=_badges_for(daily_completed),
@@ -336,6 +346,7 @@ def toggle_task(progress: RpgProgress, task_id: str, journey: RpgJourney) -> Rpg
     else:
         completed.add(task_id)
     return RpgProgress(
+        active_dungeon=progress.active_dungeon,
         completed_chapters=set(progress.completed_chapters),
         completed_tasks=completed,
         completed_bosses=set(progress.completed_bosses),
@@ -353,6 +364,7 @@ def toggle_boss(progress: RpgProgress, boss_id: str, journey: RpgJourney) -> Rpg
     else:
         completed.add(boss_id)
     return RpgProgress(
+        active_dungeon=progress.active_dungeon,
         completed_chapters=set(progress.completed_chapters),
         completed_tasks=set(progress.completed_tasks),
         completed_bosses=completed,
@@ -373,6 +385,7 @@ def load_progress(path: str | Path, journey: RpgJourney) -> RpgProgress:
     if not isinstance(payload, dict):
         raise ValueError(f"invalid RPG progress file: {progress_path}")
     progress = RpgProgress(
+        active_dungeon=_optional_string(payload.get("active_dungeon"), "active_dungeon"),
         completed_chapters=_string_set(payload.get("completed_chapters"), "completed_chapters"),
         completed_tasks=_string_set(payload.get("completed_tasks"), "completed_tasks"),
         completed_bosses=_string_set(payload.get("completed_bosses"), "completed_bosses"),
@@ -386,6 +399,7 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
     progress_path = Path(path)
     progress_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
+        "active_dungeon": progress.active_dungeon,
         "completed_tasks": sorted(progress.completed_tasks),
         "completed_chapters": sorted(progress.completed_chapters),
         "completed_bosses": sorted(progress.completed_bosses),
@@ -491,12 +505,12 @@ def _notes_from_payload(value: Any) -> list[RpgNote]:
 
 def _level_for(completed_count: int) -> tuple[str, str]:
     if completed_count >= 6:
-        return "Lv.4 产业副本通关者", "全部每日副本已完成，可以挑战 Boss 关卡。"
+        return "产业副本通关者", "全部每日副本已完成，可以挑战 Boss 关卡。"
     if completed_count >= 4:
-        return "Lv.3 产业链探索者", "已经能把单家公司放进产业场景里比较。"
+        return "产业链探索者", "已经能把单家公司放进产业场景里比较。"
     if completed_count >= 2:
-        return "Lv.2 指标观察员", "开始从收入、利润和现金流里找线索。"
-    return "Lv.1 财报新兵", "完成每日副本，解锁研究徽章。"
+        return "指标观察员", "开始从收入、利润和现金流里找线索。"
+    return "财报新兵", "完成每日副本，解锁研究徽章。"
 
 
 def _badges_for(completed_count: int) -> list[str]:

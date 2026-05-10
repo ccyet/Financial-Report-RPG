@@ -51,7 +51,11 @@ def test_task_progress_updates_level_badges_and_world_raid_separately():
 
     assert summary.daily_completed == 3
     assert summary.xp == 60
-    assert summary.level_title == "Lv.2 指标观察员"
+    assert summary.level == 4
+    assert summary.max_level == 175
+    assert summary.level_title == "指标观察员"
+    assert summary.chapter_total == 50
+    assert summary.boss_total == 99
     assert summary.unlocked_badges == ["首日开荒", "指标猎手"]
     assert summary.world_raid_unlocked is False
 
@@ -60,7 +64,19 @@ def test_task_progress_updates_level_badges_and_world_raid_separately():
     summary = summarize_progress(progress, journey)
 
     assert summary.boss_completed == 4
+    assert summary.boss_total == 99
     assert summary.world_raid_unlocked is True
+
+
+def test_progress_can_store_active_dungeon(tmp_path: Path):
+    journey = default_journey()
+    path = tmp_path / "progress.json"
+    progress = RpgProgress(active_dungeon="动力电池峡谷")
+
+    save_progress(progress, path)
+    loaded = load_progress(path, journey)
+
+    assert loaded.active_dungeon == "动力电池峡谷"
 
 
 def test_progress_persists_to_json(tmp_path: Path):

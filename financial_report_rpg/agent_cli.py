@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
 from financial_report_rpg.agent_journal import (
@@ -34,13 +35,26 @@ def run_command(
     journey = default_journey()
     progress = load_progress(progress_path, journey)
 
+    if args.command == "start":
+        if args.dungeon:
+            progress = replace(progress, active_dungeon=args.dungeon.strip())
+            save_progress(progress, progress_path)
+        save_reports(progress, journey, report_dir)
+        return _start_message(progress, journey)
+
+    if args.command == "set-dungeon":
+        progress = replace(progress, active_dungeon=args.dungeon.strip())
+        save_progress(progress, progress_path)
+        save_reports(progress, journey, report_dir)
+        return _start_message(progress, journey)
+
     if args.command == "status":
         save_reports(progress, journey, report_dir)
         return _status_message(progress, journey, report_dir)
 
     if args.command == "next":
         save_reports(progress, journey, report_dir)
-        return _guide_message(next_check_in(progress, journey), progress, journey, report_dir)
+        return _guide_message(next_check_in(progress, journey), progress, journey)
 
     if args.command == "note":
         progress = record_note(
@@ -67,7 +81,7 @@ def run_command(
             )
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir, prefix="已完成主线关卡")
+        return _settlement_message(progress, journey, "主线关卡已点亮")
 
     if args.command == "complete-task":
         progress = complete_task(progress, args.task_id, journey)
@@ -80,7 +94,7 @@ def run_command(
             )
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir, prefix="已完成任务")
+        return _settlement_message(progress, journey, "每日副本已打卡")
 
     if args.command == "complete-boss":
         progress = complete_boss(progress, args.boss_id, journey)
@@ -93,11 +107,11 @@ def run_command(
             )
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir, prefix="已通关 Boss")
+        return _settlement_message(progress, journey, "Boss 关卡已通关")
 
     if args.command == "export":
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir, prefix="已导出")
+        return _status_message(progress, journey, report_dir, prefix="已导出", show_paths=True)
 
     raise ValueError(f"unknown command: {args.command}")
 
@@ -115,6 +129,12 @@ def _argv_without_program() -> list[str]:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="financial-report-rpg")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    start = subparsers.add_parser("start")
+    start.add_argument("--dungeon")
+
+    set_dungeon = subparsers.add_parser("set-dungeon")
+    set_dungeon.add_argument("dungeon")
 
     subparsers.add_parser("status")
     subparsers.add_parser("next")
@@ -148,16 +168,54 @@ def _status_message(
     report_dir: str | Path,
     *,
     prefix: str = "当前状态",
+    show_paths: bool = False,
 ) -> str:
     summary = summarize_progress(progress, journey)
     report_path = Path(report_dir)
-    return (
+    message = (
         f"{prefix}：{summary.level_title}，"
+        f"等级 {summary.level}/{summary.max_level}，"
         f"{summary.xp}/{summary.max_xp} XP，"
         f"主线 {summary.chapter_completed}/{summary.chapter_total}，"
         f"每日副本 {summary.daily_completed}/{summary.daily_total}，"
         f"Boss {summary.boss_completed}/{summary.boss_total}。"
-        f"报告：{report_path / 'progress.md'}；{report_path / 'progress.html'}"
+    )
+    if show_paths:
+        return f"{message}报告：{report_path / 'progress.md'}；{report_path / 'progress.html'}"
+    return message
+
+
+def _start_message(progress, journey) -> str:
+    summary = summarize_progress(progress, journey)
+    gate = next_check_in(progress, journey)
+    dungeon = progress.active_dungeon or "未选择"
+    return (
+        "读取存档：旧卷轴已经展开。"
+        f"等级 {summary.level}/{summary.max_level}，称号 {summary.level_title}。"
+        f"本次挑战副本：{dungeon}。"
+        f"副本进度：主线 {summary.chapter_completed}/{summary.chapter_total}，"
+        f"每日副本 {summary.daily_completed}/{summary.daily_total}，"
+        f"Boss {summary.boss_completed}/{summary.boss_total}。"
+        f"当前关卡：{gate.title}。"
+        f"引导问题：{gate.prompt}"
+        "确认本次是否挑战该副本，或告诉我要切换行业副本。"
+    )
+
+
+def _settlement_message(progress, journey, title: str) -> str:
+    summary = summarize_progress(progress, journey)
+    gate = next_check_in(progress, journey)
+    dungeon = progress.active_dungeon or "未选择"
+    return (
+        f"关卡结算：{title}。"
+        f"副本：{dungeon}。"
+        f"等级 {summary.level}/{summary.max_level}，称号 {summary.level_title}。"
+        f"主线 {summary.chapter_completed}/{summary.chapter_total}，"
+        f"每日副本 {summary.daily_completed}/{summary.daily_total}，"
+        f"Boss {summary.boss_completed}/{summary.boss_total}。"
+        f"下一关：{gate.title}。"
+        "若当前终端支持图片，请发送 HTML 等级与进度截图；"
+        "否则以本段结算作为状态面板。"
     )
 
 
@@ -165,19 +223,20 @@ def _guide_message(
     gate: GuidedCheckIn,
     progress,
     journey,
-    report_dir: str | Path,
 ) -> str:
     summary = summarize_progress(progress, journey)
     criteria = "；".join(criterion.rstrip("。") for criterion in gate.pass_criteria)
+    dungeon = progress.active_dungeon or "未选择"
     return (
+        f"副本：{dungeon}。"
         f"当前关卡：{gate.title}。"
         f"引导问题：{gate.prompt} "
         f"通关标准：{criteria}。"
         f"打卡命令：{gate.completion_command}。"
+        f"等级 {summary.level}/{summary.max_level}，"
         f"进度：主线 {summary.chapter_completed}/{summary.chapter_total}，"
         f"每日副本 {summary.daily_completed}/{summary.daily_total}，"
         f"Boss {summary.boss_completed}/{summary.boss_total}。"
-        f"报告：{Path(report_dir) / 'progress.md'}；{Path(report_dir) / 'progress.html'}"
     )
 
 

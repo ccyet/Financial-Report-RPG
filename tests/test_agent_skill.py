@@ -24,3 +24,6 @@ def test_financial_report_rpg_skill_is_conversation_first():
     assert "next_check_in" in content
     assert "generate_html_report" in content
     assert "不要要求用户打开 Streamlit" in content
+    assert "启动引导词" in content
+    assert "不展示存储路径" in content
+    assert "截图" in content
