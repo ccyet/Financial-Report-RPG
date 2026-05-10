@@ -2,9 +2,38 @@
 
 一个 AI-native 的财报阅读 RPG：用户通过对话记录研究想法、完成任务、升级、存档，并导出当前进度 HTML 和文本汇报。
 
+## 外部用户安装
+
+```bash
+git clone https://github.com/ccyet/Financial-Report-RPG.git
+cd Financial-Report-RPG
+uv sync
+```
+
+这个仓库本身就是一个可加载的 agent skill：
+
+- 根目录 `SKILL.md`：适合把整个仓库安装为 OpenClaw / OpenCode 等终端 agent 的 skill。
+- `skills/financial-report-rpg/SKILL.md`：适合把本仓库作为 workspace 时，被 `<workspace>/skills/` 扫描到。
+
+不要只复制 `skills/financial-report-rpg/`，因为运行命令依赖仓库里的 `financial_report_rpg/` Python 模块和 `pyproject.toml`。
+
+OpenClaw 可用以下命令检查：
+
+```bash
+openclaw skills list
+openclaw skills info financial-report-rpg
+openclaw skills check
+```
+
+如果更新后没有生效，新开会话或重启 gateway：
+
+```bash
+openclaw gateway restart
+```
+
 ## 核心方式
 
-主入口是 `skills/financial-report-rpg/SKILL.md`。把这个仓库放进支持本地文件读写的 AI 工作区后，直接和 AI 对话：
+把这个仓库放进支持文件读写和命令执行的 AI 工作区后，直接和 AI 对话：
 
 - “开启财报 RPG，给我当前关卡”
 - “记录：宁德时代现金流比利润更值得先核对”
@@ -18,6 +47,8 @@ AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
 - `.local/rpg_exports/progress.html`
 
 ## 本地命令
+
+所有命令都从仓库根目录运行：
 
 ```bash
 uv run python -m financial_report_rpg.agent_cli status
@@ -46,6 +77,10 @@ uv run streamlit run financial_report_rpg/app/streamlit_app.py
 ## Notion 预留
 
 `build_notion_export` 会生成 Notion connector 可用的标题、属性和 Markdown。只有用户提供自己的 Notion 数据库或页面后，才同步远程存档；默认只做本地文件存档。
+
+## 最小示例
+
+见 `examples/MINIMAL-RUN.md`。
 
 ## 方案页
 
