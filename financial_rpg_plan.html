@@ -428,6 +428,10 @@
       font-size: 14px;
     }
 
+    .chapter h3 {
+      color: var(--ink);
+    }
+
     .bridge-panel {
       margin-top: 20px;
       padding: 18px;
@@ -583,7 +587,7 @@
     }
 
     .boss-grid {
-      grid-template-columns: repeat(3, minmax(220px, 1fr));
+      grid-template-columns: repeat(4, minmax(200px, 1fr));
       margin-top: 16px;
     }
 
@@ -603,6 +607,42 @@
     .boss-card p {
       margin-bottom: 0;
       color: #d7deea;
+    }
+
+    .world-raid {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      margin-top: 16px;
+      padding: 16px;
+      color: var(--ink);
+      background: #fff2c4;
+      border: 3px solid var(--line);
+      box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.28);
+    }
+
+    .world-raid-icon {
+      width: 84px;
+      height: 84px;
+      border: 4px solid var(--line);
+      background:
+        linear-gradient(var(--blue), var(--blue)) 28px 10px / 28px 16px no-repeat,
+        linear-gradient(var(--green), var(--green)) 16px 30px / 52px 18px no-repeat,
+        linear-gradient(var(--gold), var(--gold)) 26px 50px / 32px 10px no-repeat,
+        linear-gradient(var(--red), var(--red)) 36px 64px / 12px 8px no-repeat,
+        #f7fbff;
+      image-rendering: pixelated;
+    }
+
+    .world-raid h3 {
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .world-raid p {
+      margin-bottom: 0;
+      color: #4c463d;
     }
 
     .company-grid {
@@ -758,6 +798,10 @@
 
       .hero-actions .pixel-btn {
         width: 100%;
+      }
+
+      .world-raid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1002,8 +1046,8 @@
       <section class="section dark" id="boss">
         <h2>Boss 关卡：阶段性输出才算通关</h2>
         <p class="section-lead">
-          每日副本负责养成习惯，Boss 关卡负责逼出阶段性成果。用户完成 Boss 后，才真正从“看过”
-          进入“形成结构化理解”。
+          每日副本负责养成习惯，Boss 关卡负责逼出阶段性成果。完成 4 个 Boss 后，
+          解锁世界副本，把单家公司研究上升到产业在国家价值链中的位置判断。
         </p>
         <div class="boss-grid">
           <article class="boss-card">
@@ -1018,6 +1062,20 @@
             <h3>产业灵感日志</h3>
             <p>沉淀一条产业变化线索，列出支持证据、反证信号和下次跟踪动作。</p>
           </article>
+          <article class="boss-card">
+            <h3>画像复核报告</h3>
+            <p>回到初始印象，说明哪些判断被证实、修正或推翻。</p>
+          </article>
+        </div>
+        <div class="world-raid">
+          <div class="world-raid-icon" aria-hidden="true"></div>
+          <div>
+            <h3>世界副本：国家价值链坐标</h3>
+            <p>
+              完成 4 个 Boss 关卡后解锁。用户需要研究该产业在国家价值链中的位置：
+              是基础能力、关键卡点、全球竞争优势，还是下游应用扩散节点。
+            </p>
+          </div>
         </div>
       </section>
 
