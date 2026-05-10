@@ -7,8 +7,3 @@ __pycache__/
 .local/
 .env
 .env.local
-ifind.mcp.json
-*.local.mcp.json
-data/raw/
-reports/runs/
-reports/article_extract/

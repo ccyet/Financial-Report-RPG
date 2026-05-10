@@ -1,24 +1,21 @@
 [project]
-name = "fundamental-pulse"
+name = "financial-report-rpg"
 version = "0.1.0"
-description = "Lightweight quarterly fundamental growth classifier."
+description = "Pixel RPG style financial report reading journey."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "pandas>=2.2",
-    "pydantic>=2.7",
     "pytest>=8.2",
     "ruff>=0.5",
     "streamlit>=1.36",
-    "typer>=0.12",
 ]
-
-[project.scripts]
-pulse = "fundamental_pulse.cli:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["financial_report_rpg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

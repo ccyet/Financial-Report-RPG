@@ -1,1 +1,0 @@
-"""Fundamental Pulse MVP."""

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from fundamental_pulse.rpg import (
+from financial_report_rpg.rpg import (
     RpgProgress,
     default_journey,
     load_progress,
