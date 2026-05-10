@@ -4,6 +4,7 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+.local/
 .env
 .env.local
 ifind.mcp.json

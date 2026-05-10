@@ -7,7 +7,7 @@ from fundamental_pulse.app.formatting import (
     format_error_summary,
     format_pct,
 )
-from fundamental_pulse.app.streamlit_app import parse_single_period_inputs
+from fundamental_pulse.app.streamlit_app import dashboard_tab_labels, parse_single_period_inputs
 from fundamental_pulse.models import AnalysisRunResult, WatchlistRunItem, WatchlistRunResult
 
 
@@ -116,3 +116,7 @@ def test_parse_single_period_inputs_keeps_explicit_start_end():
     assert period is None
     assert start == "2024Q1"
     assert end == "2024Q4"
+
+
+def test_dashboard_includes_rpg_journey_tab():
+    assert dashboard_tab_labels() == ["单股分析", "观察列表", "RPG 旅程", "历史报告"]

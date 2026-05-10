@@ -112,6 +112,8 @@ uv run streamlit run fundamental_pulse/app/streamlit_app.py
 
 页面只负责参数输入、KPI 摘要、观察列表表格、历史报告读取和完整报告展示；
 分析计算仍由 `run_analysis` 完成。
+新增的 `RPG 旅程` 页签提供主线章节、每日副本、Boss 关卡和世界副本解锁；
+进度保存在本地 `.local/rpg_progress.json`，不会入库。
 
 ## Watchlist dashboard
 
