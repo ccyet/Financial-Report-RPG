@@ -5,6 +5,7 @@ import pytest
 from financial_report_rpg.rpg import (
     RpgProgress,
     default_journey,
+    dungeon_progress,
     load_progress,
     save_progress,
     summarize_progress,
@@ -77,6 +78,24 @@ def test_progress_can_store_active_dungeon(tmp_path: Path):
     loaded = load_progress(path, journey)
 
     assert loaded.active_dungeon == "动力电池峡谷"
+
+
+def test_each_industry_dungeon_has_independent_progress(tmp_path: Path):
+    journey = default_journey()
+    path = tmp_path / "progress.json"
+    progress = RpgProgress(active_dungeon="动力电池峡谷")
+
+    battery = dungeon_progress(progress)
+    battery = toggle_task(battery, "cash", journey)
+    progress = progress.with_dungeon("动力电池峡谷", battery)
+    progress = progress.switch_dungeon("半导体矿洞")
+
+    save_progress(progress, path)
+    loaded = load_progress(path, journey)
+
+    assert loaded.active_dungeon == "半导体矿洞"
+    assert dungeon_progress(loaded, "动力电池峡谷").completed_tasks == {"cash"}
+    assert dungeon_progress(loaded, "半导体矿洞").completed_tasks == set()
 
 
 def test_progress_persists_to_json(tmp_path: Path):

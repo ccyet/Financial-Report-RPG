@@ -7,7 +7,13 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from financial_report_rpg.rpg import RpgJourney, RpgNote, RpgProgress, summarize_progress
+from financial_report_rpg.rpg import (
+    RpgJourney,
+    RpgNote,
+    RpgProgress,
+    dungeon_progress,
+    summarize_progress,
+)
 
 DEFAULT_REPORT_DIR = Path(".local/rpg_exports")
 TEXT_REPORT_NAME = "progress.md"
@@ -67,6 +73,7 @@ def complete_task(progress: RpgProgress, task_id: str, journey: RpgJourney) -> R
 
 
 def next_check_in(progress: RpgProgress, journey: RpgJourney) -> GuidedCheckIn:
+    progress = dungeon_progress(progress)
     summarize_progress(progress, journey)
     for chapter in journey.chapters:
         if chapter.id not in progress.completed_chapters:
@@ -115,8 +122,10 @@ def complete_boss(progress: RpgProgress, boss_id: str, journey: RpgJourney) -> R
 
 
 def generate_text_report(progress: RpgProgress, journey: RpgJourney) -> str:
+    progress = dungeon_progress(progress)
     summary = summarize_progress(progress, journey)
     level_label = _level_label(summary)
+    dungeon_label = progress.active_dungeon or "未选择行业副本"
     badges = "、".join(summary.unlocked_badges) if summary.unlocked_badges else "暂无"
     completed_tasks = _completed_task_lines(progress, journey)
     completed_chapters = _completed_chapter_lines(progress, journey)
@@ -129,6 +138,7 @@ def generate_text_report(progress: RpgProgress, journey: RpgJourney) -> str:
         [
             "# 财报 RPG 当前进度",
             "",
+            f"- 当前副本：{dungeon_label}",
             f"- 等级：{level_label}",
             f"- 经验：{summary.xp}/{summary.max_xp} XP",
             f"- 主线关卡：{summary.chapter_completed}/{summary.chapter_total}",
@@ -164,8 +174,10 @@ def generate_text_report(progress: RpgProgress, journey: RpgJourney) -> str:
 
 
 def generate_html_report(progress: RpgProgress, journey: RpgJourney) -> str:
+    progress = dungeon_progress(progress)
     summary = summarize_progress(progress, journey)
     level_label = _level_label(summary)
+    dungeon_label = progress.active_dungeon or "未选择行业副本"
     badges = summary.unlocked_badges or ["暂无"]
     world_raid_status = "已解锁" if summary.world_raid_unlocked else "未解锁"
     chapter_metric = f"{summary.chapter_completed}/{summary.chapter_total}"
@@ -274,6 +286,7 @@ def generate_html_report(progress: RpgProgress, journey: RpgJourney) -> str:
     <section>
       <h1>财报 RPG 当前进度</h1>
       <div class="status">
+        <div class="metric">当前副本<strong>{escape(dungeon_label)}</strong></div>
         <div class="metric">等级<strong>{escape(level_label)}</strong></div>
         <div class="metric">经验<strong>{summary.xp}/{summary.max_xp} XP</strong></div>
         <div class="metric">主线关卡<strong>{chapter_metric}</strong></div>
@@ -332,6 +345,7 @@ def save_reports(
 
 
 def build_notion_export(progress: RpgProgress, journey: RpgJourney) -> dict[str, Any]:
+    progress = dungeon_progress(progress)
     summary = summarize_progress(progress, journey)
     return {
         "title": "财报 RPG 当前进度",

@@ -101,3 +101,36 @@ def test_agent_cli_completion_is_immersive_and_hides_storage_paths(tmp_path: Pat
     assert "若当前终端支持图片" in output
     assert ".local" not in output
     assert "progress.html" not in output
+
+
+def test_agent_cli_keeps_progress_separate_by_industry_dungeon(tmp_path: Path):
+    progress_path = tmp_path / "progress.json"
+    report_dir = tmp_path / "exports"
+
+    run_command(
+        ["start", "--dungeon", "动力电池峡谷"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    run_command(
+        ["complete-chapter", "first_impression", "--note", "电池副本第一关完成。"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    semiconductor_start = run_command(
+        ["start", "--dungeon", "半导体矿洞"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    battery_start = run_command(
+        ["start", "--dungeon", "动力电池峡谷"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+
+    assert "本次挑战副本：半导体矿洞" in semiconductor_start
+    assert "副本进度：主线 0/50" in semiconductor_start
+    assert "当前关卡：初始印象" in semiconductor_start
+    assert "本次挑战副本：动力电池峡谷" in battery_start
+    assert "副本进度：主线 1/50" in battery_start
+    assert "当前关卡：收入结构" in battery_start

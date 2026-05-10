@@ -3,6 +3,7 @@ from pathlib import Path
 from financial_report_rpg.agent_journal import (
     build_notion_export,
     complete_chapter,
+    complete_task,
     generate_html_report,
     generate_text_report,
     next_check_in,
@@ -12,6 +13,7 @@ from financial_report_rpg.agent_journal import (
 from financial_report_rpg.rpg import (
     RpgProgress,
     default_journey,
+    dungeon_progress,
     load_progress,
     save_progress,
     toggle_boss,
@@ -67,6 +69,39 @@ def test_reports_include_current_progress_notes_and_no_user_inputs():
     assert "通关标准" in html_report
     assert "Lv.2/175" in html_report
     assert "1/99" in html_report
+
+
+def test_reports_use_active_industry_dungeon_snapshot():
+    journey = default_journey()
+    progress = RpgProgress(active_dungeon="动力电池峡谷")
+    battery = complete_chapter(
+        dungeon_progress(progress),
+        "first_impression",
+        journey,
+    )
+    battery = record_note(
+        battery,
+        text="电池副本：初始印象已经验证。",
+        linked_chapter_id="first_impression",
+        journey=journey,
+        created_at="2026-05-10T12:00:00+08:00",
+    )
+    progress = progress.with_dungeon("动力电池峡谷", battery)
+    progress = progress.switch_dungeon("半导体矿洞")
+    semiconductor = complete_task(dungeon_progress(progress), "cash", journey)
+    progress = progress.with_dungeon("半导体矿洞", semiconductor)
+
+    text_report = generate_text_report(progress, journey)
+    html_report = generate_html_report(progress, journey)
+
+    assert "当前副本：半导体矿洞" in text_report
+    assert "主线关卡：0/50" in text_report
+    assert "每日副本：1/6" in text_report
+    assert "核对现金流含金量" in text_report
+    assert "初始印象已经验证" not in text_report
+    assert "半导体矿洞" in html_report
+    assert "核对现金流含金量" in html_report
+    assert "初始印象已经验证" not in html_report
 
 
 def test_next_check_in_guides_chapter_by_chapter():

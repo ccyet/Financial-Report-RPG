@@ -63,6 +63,8 @@ uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现�
 uv run python -m financial_report_rpg.agent_cli export
 ```
 
+一个行业就是一个副本。不同行业副本的主线、每日、Boss 和笔记进度彼此独立；切换副本不会清空其他行业的存档。
+
 ## RPG 结构
 
 - 主线战役：7 个章节，每章都有引导问题和通关标准。

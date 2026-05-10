@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import replace
 from pathlib import Path
 
 from financial_report_rpg.agent_journal import (
@@ -15,7 +14,9 @@ from financial_report_rpg.agent_journal import (
     save_reports,
 )
 from financial_report_rpg.rpg import (
+    RpgProgress,
     default_journey,
+    dungeon_progress,
     load_progress,
     save_progress,
     summarize_progress,
@@ -37,28 +38,29 @@ def run_command(
 
     if args.command == "start":
         if args.dungeon:
-            progress = replace(progress, active_dungeon=args.dungeon.strip())
+            progress = progress.switch_dungeon(args.dungeon)
             save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _start_message(progress, journey)
+        return _start_message(dungeon_progress(progress), journey)
 
     if args.command == "set-dungeon":
-        progress = replace(progress, active_dungeon=args.dungeon.strip())
+        progress = progress.switch_dungeon(args.dungeon)
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _start_message(progress, journey)
+        return _start_message(dungeon_progress(progress), journey)
 
     if args.command == "status":
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir)
+        return _status_message(dungeon_progress(progress), journey, report_dir)
 
     if args.command == "next":
         save_reports(progress, journey, report_dir)
-        return _guide_message(next_check_in(progress, journey), progress, journey)
+        active = dungeon_progress(progress)
+        return _guide_message(next_check_in(active, journey), active, journey)
 
     if args.command == "note":
-        progress = record_note(
-            progress,
+        active = record_note(
+            dungeon_progress(progress),
             args.text,
             tags=args.tag,
             linked_chapter_id=args.chapter,
@@ -66,52 +68,58 @@ def run_command(
             linked_boss_id=args.boss,
             journey=journey,
         )
+        progress = _store_active(progress, active)
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir, prefix="已记录")
+        return _status_message(active, journey, report_dir, prefix="已记录")
 
     if args.command == "complete-chapter":
-        progress = complete_chapter(progress, args.chapter_id, journey)
+        active = complete_chapter(dungeon_progress(progress), args.chapter_id, journey)
         if args.note:
-            progress = record_note(
-                progress,
+            active = record_note(
+                active,
                 args.note,
                 linked_chapter_id=args.chapter_id,
                 journey=journey,
             )
+        progress = _store_active(progress, active)
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _settlement_message(progress, journey, "主线关卡已点亮")
+        return _settlement_message(active, journey, "主线关卡已点亮")
 
     if args.command == "complete-task":
-        progress = complete_task(progress, args.task_id, journey)
+        active = complete_task(dungeon_progress(progress), args.task_id, journey)
         if args.note:
-            progress = record_note(
-                progress,
+            active = record_note(
+                active,
                 args.note,
                 linked_task_id=args.task_id,
                 journey=journey,
             )
+        progress = _store_active(progress, active)
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _settlement_message(progress, journey, "每日副本已打卡")
+        return _settlement_message(active, journey, "每日副本已打卡")
 
     if args.command == "complete-boss":
-        progress = complete_boss(progress, args.boss_id, journey)
+        active = complete_boss(dungeon_progress(progress), args.boss_id, journey)
         if args.note:
-            progress = record_note(
-                progress,
+            active = record_note(
+                active,
                 args.note,
                 linked_boss_id=args.boss_id,
                 journey=journey,
             )
+        progress = _store_active(progress, active)
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _settlement_message(progress, journey, "Boss 关卡已通关")
+        return _settlement_message(active, journey, "Boss 关卡已通关")
 
     if args.command == "export":
         save_reports(progress, journey, report_dir)
-        return _status_message(progress, journey, report_dir, prefix="已导出", show_paths=True)
+        return _status_message(
+            dungeon_progress(progress), journey, report_dir, prefix="已导出", show_paths=True
+        )
 
     raise ValueError(f"unknown command: {args.command}")
 
@@ -183,6 +191,12 @@ def _status_message(
     if show_paths:
         return f"{message}报告：{report_path / 'progress.md'}；{report_path / 'progress.html'}"
     return message
+
+
+def _store_active(progress: RpgProgress, active: RpgProgress) -> RpgProgress:
+    if not active.active_dungeon:
+        return active
+    return progress.with_dungeon(active.active_dungeon, active)
 
 
 def _start_message(progress, journey) -> str:

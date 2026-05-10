@@ -72,6 +72,50 @@ class RpgProgress:
     completed_tasks: set[str] = field(default_factory=set)
     completed_bosses: set[str] = field(default_factory=set)
     notes: list[RpgNote] = field(default_factory=list)
+    dungeons: dict[str, RpgProgress] = field(default_factory=dict)
+
+    def switch_dungeon(self, dungeon: str) -> RpgProgress:
+        name = dungeon.strip()
+        if not name:
+            raise ValueError("RPG dungeon name cannot be empty")
+        current = self._with_active_snapshot()
+        if name not in current.dungeons:
+            current = current.with_dungeon(name, RpgProgress(active_dungeon=name))
+        return RpgProgress(
+            active_dungeon=name,
+            dungeons=dict(current.dungeons),
+        )
+
+    def with_dungeon(self, dungeon: str, progress: RpgProgress) -> RpgProgress:
+        name = dungeon.strip()
+        if not name:
+            raise ValueError("RPG dungeon name cannot be empty")
+        snapshot = progress.as_dungeon_snapshot(name)
+        dungeons = dict(self.dungeons)
+        dungeons[name] = snapshot
+        return RpgProgress(
+            active_dungeon=self.active_dungeon or name,
+            dungeons=dungeons,
+        )
+
+    def as_dungeon_snapshot(self, dungeon: str | None = None) -> RpgProgress:
+        return RpgProgress(
+            active_dungeon=dungeon or self.active_dungeon,
+            completed_chapters=set(self.completed_chapters),
+            completed_tasks=set(self.completed_tasks),
+            completed_bosses=set(self.completed_bosses),
+            notes=list(self.notes),
+        )
+
+    def _with_active_snapshot(self) -> RpgProgress:
+        if not self.active_dungeon:
+            return self
+        active = self.as_dungeon_snapshot(self.active_dungeon)
+        if _is_empty_dungeon_snapshot(active):
+            return self
+        dungeons = dict(self.dungeons)
+        dungeons[self.active_dungeon] = active
+        return RpgProgress(active_dungeon=self.active_dungeon, dungeons=dungeons)
 
 
 @dataclass(frozen=True)
@@ -307,6 +351,7 @@ def default_journey() -> RpgJourney:
 
 
 def summarize_progress(progress: RpgProgress, journey: RpgJourney) -> RpgProgressSummary:
+    progress = dungeon_progress(progress)
     _validate_progress(progress, journey)
     daily_task_ids = {task.id for task in journey.daily_tasks}
     chapter_ids = {chapter.id for chapter in journey.chapters}
@@ -337,6 +382,7 @@ def summarize_progress(progress: RpgProgress, journey: RpgJourney) -> RpgProgres
 
 
 def toggle_task(progress: RpgProgress, task_id: str, journey: RpgJourney) -> RpgProgress:
+    progress = dungeon_progress(progress)
     task_ids = {task.id for task in journey.daily_tasks}
     if task_id not in task_ids:
         raise ValueError(f"unknown RPG task id: {task_id}")
@@ -355,6 +401,7 @@ def toggle_task(progress: RpgProgress, task_id: str, journey: RpgJourney) -> Rpg
 
 
 def toggle_boss(progress: RpgProgress, boss_id: str, journey: RpgJourney) -> RpgProgress:
+    progress = dungeon_progress(progress)
     boss_ids = {boss.id for boss in journey.boss_tasks}
     if boss_id not in boss_ids:
         raise ValueError(f"unknown RPG boss id: {boss_id}")
@@ -384,13 +431,17 @@ def load_progress(path: str | Path, journey: RpgJourney) -> RpgProgress:
 
     if not isinstance(payload, dict):
         raise ValueError(f"invalid RPG progress file: {progress_path}")
+    dungeons = _dungeons_from_payload(payload.get("dungeons"), journey)
     progress = RpgProgress(
         active_dungeon=_optional_string(payload.get("active_dungeon"), "active_dungeon"),
         completed_chapters=_string_set(payload.get("completed_chapters"), "completed_chapters"),
         completed_tasks=_string_set(payload.get("completed_tasks"), "completed_tasks"),
         completed_bosses=_string_set(payload.get("completed_bosses"), "completed_bosses"),
         notes=_notes_from_payload(payload.get("notes")),
+        dungeons=dungeons,
     )
+    if progress.active_dungeon and progress.active_dungeon not in progress.dungeons:
+        progress = progress.with_dungeon(progress.active_dungeon, progress)
     _validate_progress(progress, journey)
     return progress
 
@@ -415,6 +466,10 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
             }
             for note in progress.notes
         ],
+        "dungeons": {
+            name: _progress_payload(dungeon_progress(snapshot, name))
+            for name, snapshot in sorted(progress._with_active_snapshot().dungeons.items())
+        },
     }
     progress_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
@@ -423,6 +478,7 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
 
 
 def _validate_progress(progress: RpgProgress, journey: RpgJourney) -> None:
+    progress = dungeon_progress(progress)
     task_ids = {task.id for task in journey.daily_tasks}
     chapter_ids = {chapter.id for chapter in journey.chapters}
     boss_ids = {boss.id for boss in journey.boss_tasks}
@@ -442,6 +498,71 @@ def _validate_progress(progress: RpgProgress, journey: RpgJourney) -> None:
             raise ValueError(f"unknown RPG task id: {note.linked_task_id}")
         if note.linked_boss_id is not None and note.linked_boss_id not in boss_ids:
             raise ValueError(f"unknown RPG boss id: {note.linked_boss_id}")
+
+
+def dungeon_progress(progress: RpgProgress, dungeon: str | None = None) -> RpgProgress:
+    name = dungeon or progress.active_dungeon
+    if not name:
+        return progress.as_dungeon_snapshot(None)
+    if name in progress.dungeons:
+        return progress.dungeons[name].as_dungeon_snapshot(name)
+    if name == progress.active_dungeon:
+        return progress.as_dungeon_snapshot(name)
+    return RpgProgress(active_dungeon=name)
+
+
+def _progress_payload(progress: RpgProgress) -> dict[str, Any]:
+    return {
+        "completed_tasks": sorted(progress.completed_tasks),
+        "completed_chapters": sorted(progress.completed_chapters),
+        "completed_bosses": sorted(progress.completed_bosses),
+        "notes": [
+            {
+                "id": note.id,
+                "created_at": note.created_at,
+                "text": note.text,
+                "tags": note.tags,
+                "linked_chapter_id": note.linked_chapter_id,
+                "linked_task_id": note.linked_task_id,
+                "linked_boss_id": note.linked_boss_id,
+            }
+            for note in progress.notes
+        ],
+    }
+
+
+def _dungeons_from_payload(value: Any, journey: RpgJourney) -> dict[str, RpgProgress]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("invalid RPG progress field: dungeons")
+    dungeons = {}
+    for name, payload in value.items():
+        if not isinstance(name, str) or not isinstance(payload, dict):
+            raise ValueError("invalid RPG progress field: dungeons")
+        snapshot = RpgProgress(
+            active_dungeon=name,
+            completed_chapters=_string_set(
+                payload.get("completed_chapters"), "dungeons.completed_chapters"
+            ),
+            completed_tasks=_string_set(payload.get("completed_tasks"), "dungeons.completed_tasks"),
+            completed_bosses=_string_set(
+                payload.get("completed_bosses"), "dungeons.completed_bosses"
+            ),
+            notes=_notes_from_payload(payload.get("notes")),
+        )
+        _validate_progress(snapshot, journey)
+        dungeons[name] = snapshot
+    return dungeons
+
+
+def _is_empty_dungeon_snapshot(progress: RpgProgress) -> bool:
+    return not (
+        progress.completed_chapters
+        or progress.completed_tasks
+        or progress.completed_bosses
+        or progress.notes
+    )
 
 
 def _string_set(value: Any, field_name: str) -> set[str]:

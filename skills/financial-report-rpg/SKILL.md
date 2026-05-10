@@ -14,12 +14,13 @@ version: 2026.05.10
 - 从包含 `pyproject.toml` 的仓库根目录运行命令。
 - 不要只复制 `skills/financial-report-rpg/`；这个 skill 依赖仓库里的 `financial_report_rpg` Python 模块。
 - 进度文件写入 `.local/rpg_progress.json`，导出文件写入 `.local/rpg_exports/`。
+- 一个行业就是一个副本；不同行业副本拥有彼此独立的主线、每日、Boss 和笔记进度。
 - 不联网抓财报，不伪造数据，不给投资建议。
 - 不要要求用户打开 Streamlit；Streamlit 只是可选查看器，不是主流程。
 
 # 对话流程
 
-1. 每次启动先用 `uv run python -m financial_report_rpg.agent_cli start` 输出启动引导词，读取存档、等级和当前行业副本。
+1. 每次启动先用 `uv run python -m financial_report_rpg.agent_cli start` 输出启动引导词，读取当前行业副本的存档、等级和进度。
 2. 用 `uv run python -m financial_report_rpg.agent_cli next` 获取当前关卡、引导问题和通关标准。
 3. 用户回答后，先用 `note` 保存原始想法。
 4. 按通关标准判断是否打卡；不满足标准只追问一个关键缺口。

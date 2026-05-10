@@ -28,6 +28,14 @@ uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡
 uv run python -m financial_report_rpg.agent_cli next
 ```
 
+切换行业副本时：
+
+```bash
+uv run python -m financial_report_rpg.agent_cli start --dungeon "半导体矿洞"
+```
+
+半导体矿洞会拥有独立进度，不会继承动力电池峡谷的关卡完成状态。
+
 ## 记录一次回答
 
 ```bash
