@@ -11,6 +11,8 @@ class RpgChapter:
     id: str
     title: str
     description: str
+    check_in_prompt: str
+    pass_criteria: list[str]
 
 
 @dataclass(frozen=True)
@@ -19,6 +21,8 @@ class RpgTask:
     title: str
     description: str
     xp: int
+    check_in_prompt: str
+    pass_criteria: list[str]
 
 
 @dataclass(frozen=True)
@@ -26,6 +30,7 @@ class RpgBoss:
     id: str
     title: str
     description: str
+    pass_criteria: list[str]
 
 
 @dataclass(frozen=True)
@@ -33,6 +38,8 @@ class RpgWorldRaid:
     title: str
     description: str
     unlock_required_bosses: int
+    check_in_prompt: str
+    pass_criteria: list[str]
 
 
 @dataclass(frozen=True)
@@ -49,12 +56,14 @@ class RpgNote:
     created_at: str
     text: str
     tags: list[str] = field(default_factory=list)
+    linked_chapter_id: str | None = None
     linked_task_id: str | None = None
     linked_boss_id: str | None = None
 
 
 @dataclass(frozen=True)
 class RpgProgress:
+    completed_chapters: set[str] = field(default_factory=set)
     completed_tasks: set[str] = field(default_factory=set)
     completed_bosses: set[str] = field(default_factory=set)
     notes: list[RpgNote] = field(default_factory=list)
@@ -64,6 +73,8 @@ class RpgProgress:
 class RpgProgressSummary:
     xp: int
     max_xp: int
+    chapter_completed: int
+    chapter_total: int
     daily_completed: int
     daily_total: int
     boss_completed: int
@@ -81,36 +92,78 @@ def default_journey() -> RpgJourney:
                 id="first_impression",
                 title="初始印象",
                 description="先写下对公司业务、客户和产业位置的第一判断，作为后续验证对象。",
+                check_in_prompt="先说出你对这家公司业务、客户、产业位置的第一判断。",
+                pass_criteria=[
+                    "能说清公司大致卖什么、卖给谁。",
+                    "能判断它在产业链上游、中游、下游或平台环节的位置。",
+                    "明确这只是第一印象，至少留下 1 个待验证问题。",
+                ],
             ),
             RpgChapter(
                 id="revenue_structure",
                 title="收入结构",
                 description="拆产品、区域、客户和量价变化，找到增长来自哪里。",
+                check_in_prompt="把收入拆成产品、区域、客户或量价中的至少两个维度。",
+                pass_criteria=[
+                    "指出主要收入来源，不只说总收入涨跌。",
+                    "区分增长来自销量、价格、产品结构、区域或客户变化。",
+                    "留下 1 条需要回到财报附注或管理层讨论验证的线索。",
+                ],
             ),
             RpgChapter(
                 id="profit_quality",
                 title="利润质量",
                 description="看毛利率、费用率、扣非利润和非经常性损益的真实贡献。",
+                check_in_prompt="说明利润变化到底来自经营改善还是一次性项目。",
+                pass_criteria=[
+                    "至少检查毛利率、费用率、扣非利润中的两个指标。",
+                    "识别是否存在非经常性损益、减值或补贴影响。",
+                    "能写出 1 句对利润质量的暂定判断。",
+                ],
             ),
             RpgChapter(
                 id="cash_assets",
                 title="现金与资产",
                 description="用经营现金流、应收、存货和合同负债判断增长含金量。",
+                check_in_prompt="用现金流和资产项目验证增长是否有含金量。",
+                pass_criteria=[
+                    "比较经营现金流和净利润方向是否一致。",
+                    "至少查看应收、存货、合同负债中的两个项目。",
+                    "写出 1 个现金强或现金弱的原因假设。",
+                ],
             ),
             RpgChapter(
                 id="industry_compare",
                 title="产业对比",
                 description="放到同产业头部公司里比较，识别强弱、周期和分化。",
+                check_in_prompt="找一个同产业对照公司，说明两家公司差异在哪里。",
+                pass_criteria=[
+                    "至少选择 1 家同产业头部公司作为参照。",
+                    "比较收入增速、毛利率、现金流或库存中的两个维度。",
+                    "写出公司强弱来自自身能力还是行业周期的判断。",
+                ],
             ),
             RpgChapter(
                 id="portrait_confirm",
                 title="画像确认",
                 description="回到第一印象，依据财报证据修正公司到底靠什么赚钱。",
+                check_in_prompt="回到第一印象，说明哪些判断被证实、修正或推翻。",
+                pass_criteria=[
+                    "引用前面至少 2 条财报证据修正公司画像。",
+                    "说清公司真正靠什么赚钱，而不是只复述业务介绍。",
+                    "保留 1 条尚未解决的反证或跟踪问题。",
+                ],
             ),
             RpgChapter(
                 id="idea_log",
                 title="灵感沉淀",
                 description="把结论、反证信号和后续跟踪动作写入个人研究日志。",
+                check_in_prompt="把本轮阅读沉淀成可复盘的研究灵感和下一步动作。",
+                pass_criteria=[
+                    "形成 1 条可复盘的产业或公司变化线索。",
+                    "同时记录支持证据和可能推翻它的反证信号。",
+                    "明确下一次要跟踪的财报项目、公司或产业事件。",
+                ],
             ),
         ],
         daily_tasks=[
@@ -119,36 +172,72 @@ def default_journey() -> RpgJourney:
                 title="读一页管理层讨论",
                 description="只找管理层对收入、价格、需求、产能或客户结构的解释。",
                 xp=20,
+                check_in_prompt="今天从管理层讨论里摘出一个经营变化解释。",
+                pass_criteria=[
+                    "说出变化发生在收入、价格、需求、产能或客户结构中的哪一类。",
+                    "保留管理层解释和自己的验证问题。",
+                    "完成后可打卡。",
+                ],
             ),
             RpgTask(
                 id="profit",
                 title="找一个利润变化原因",
                 description="判断利润变化来自收入、毛利率、费用、减值还是非经常性项目。",
                 xp=20,
+                check_in_prompt="今天只找一个利润变化原因，不扩展成完整报告。",
+                pass_criteria=[
+                    "明确利润变化来自收入、毛利率、费用、减值或非经常性项目中的哪一类。",
+                    "写出它是经营性变化还是一次性变化。",
+                    "完成后可打卡。",
+                ],
             ),
             RpgTask(
                 id="cash",
                 title="核对现金流含金量",
                 description="比较经营现金流与归母净利润，找是否存在利润好但现金弱。",
                 xp=20,
+                check_in_prompt="今天只核对经营现金流和利润是否匹配。",
+                pass_criteria=[
+                    "比较经营现金流和归母净利润的方向或比例。",
+                    "指出现金流强弱可能来自回款、库存、预收或资本开支中的哪一类。",
+                    "完成后可打卡。",
+                ],
             ),
             RpgTask(
                 id="compare",
                 title="对比一个产业同伴",
                 description="把同产业另一家公司加入对照，观察收入增速、毛利率和库存差异。",
                 xp=20,
+                check_in_prompt="今天只加入一个同产业对照公司。",
+                pass_criteria=[
+                    "选出 1 家对照公司并说明为什么可比。",
+                    "至少比较收入增速、毛利率、库存或现金流中的一个指标。",
+                    "完成后可打卡。",
+                ],
             ),
             RpgTask(
                 id="risk",
                 title="记录一个反证信号",
                 description="主动寻找可能推翻结论的信号：价格下行、应收走高、订单变弱。",
                 xp=20,
+                check_in_prompt="今天只记录一个可能推翻当前判断的信号。",
+                pass_criteria=[
+                    "反证信号要具体到价格、应收、订单、库存、竞争或政策中的一类。",
+                    "说明它会推翻哪一个原判断。",
+                    "完成后可打卡。",
+                ],
             ),
             RpgTask(
                 id="idea",
                 title="沉淀一个投资灵感",
                 description="把今天最值得跟踪的业务变化，归档成后续可复盘的研究线索。",
                 xp=20,
+                check_in_prompt="今天只沉淀一个值得后续跟踪的研究灵感。",
+                pass_criteria=[
+                    "灵感必须来自财报里的一个变化，而不是泛泛观点。",
+                    "同时写出下一次要验证的数据或事件。",
+                    "完成后可打卡。",
+                ],
             ),
         ],
         boss_tasks=[
@@ -156,21 +245,41 @@ def default_journey() -> RpgJourney:
                 id="three_year_map",
                 title="三年财报地图",
                 description="完成一家龙头公司三年收入、利润、现金流和资产负债地图。",
+                pass_criteria=[
+                    "覆盖同一家公司连续三年的收入、利润、现金流和资产负债。",
+                    "写出三年里最关键的一条变化主线。",
+                    "能指出至少 1 个后续跟踪变量。",
+                ],
             ),
             RpgBoss(
                 id="peer_battle",
                 title="三家公司横向对战",
                 description="完成同产业三家头部企业对比，说明谁在扩张、谁在承压。",
+                pass_criteria=[
+                    "至少包含三家同产业公司。",
+                    "用两个以上指标说明谁在扩张、谁在承压。",
+                    "给出产业分化背后的原因假设。",
+                ],
             ),
             RpgBoss(
                 id="industry_log",
                 title="产业灵感日志",
                 description="沉淀一条产业变化线索，列出支持证据、反证信号和下次跟踪动作。",
+                pass_criteria=[
+                    "形成一条产业变化线索。",
+                    "同时列出支持证据和反证信号。",
+                    "明确下次跟踪动作。",
+                ],
             ),
             RpgBoss(
                 id="portrait_review",
                 title="画像复核报告",
                 description="回到初始印象，说明哪些判断被证实、修正或推翻。",
+                pass_criteria=[
+                    "逐条回看初始印象。",
+                    "说明哪些判断被证实、修正或推翻。",
+                    "形成新版公司画像。",
+                ],
             ),
         ],
         world_raid=RpgWorldRaid(
@@ -180,6 +289,12 @@ def default_journey() -> RpgJourney:
                 "基础能力、关键卡点、全球竞争优势，或下游应用扩散节点。"
             ),
             unlock_required_bosses=4,
+            check_in_prompt="研究该产业在国家价值链中的位置。",
+            pass_criteria=[
+                "说明产业承担的是基础能力、关键卡点、全球竞争优势还是下游扩散节点。",
+                "至少引用 2 条企业或产业层面的证据。",
+                "写出国产替代、全球竞争或国家价值链位置的一条判断。",
+            ],
         ),
     )
 
@@ -187,7 +302,9 @@ def default_journey() -> RpgJourney:
 def summarize_progress(progress: RpgProgress, journey: RpgJourney) -> RpgProgressSummary:
     _validate_progress(progress, journey)
     daily_task_ids = {task.id for task in journey.daily_tasks}
+    chapter_ids = {chapter.id for chapter in journey.chapters}
     boss_ids = {boss.id for boss in journey.boss_tasks}
+    chapter_completed = len(progress.completed_chapters & chapter_ids)
     daily_completed = len(progress.completed_tasks & daily_task_ids)
     boss_completed = len(progress.completed_bosses & boss_ids)
     xp = sum(task.xp for task in journey.daily_tasks if task.id in progress.completed_tasks)
@@ -196,6 +313,8 @@ def summarize_progress(progress: RpgProgress, journey: RpgJourney) -> RpgProgres
     return RpgProgressSummary(
         xp=xp,
         max_xp=max_xp,
+        chapter_completed=chapter_completed,
+        chapter_total=len(journey.chapters),
         daily_completed=daily_completed,
         daily_total=len(journey.daily_tasks),
         boss_completed=boss_completed,
@@ -217,6 +336,7 @@ def toggle_task(progress: RpgProgress, task_id: str, journey: RpgJourney) -> Rpg
     else:
         completed.add(task_id)
     return RpgProgress(
+        completed_chapters=set(progress.completed_chapters),
         completed_tasks=completed,
         completed_bosses=set(progress.completed_bosses),
         notes=list(progress.notes),
@@ -233,6 +353,7 @@ def toggle_boss(progress: RpgProgress, boss_id: str, journey: RpgJourney) -> Rpg
     else:
         completed.add(boss_id)
     return RpgProgress(
+        completed_chapters=set(progress.completed_chapters),
         completed_tasks=set(progress.completed_tasks),
         completed_bosses=completed,
         notes=list(progress.notes),
@@ -252,6 +373,7 @@ def load_progress(path: str | Path, journey: RpgJourney) -> RpgProgress:
     if not isinstance(payload, dict):
         raise ValueError(f"invalid RPG progress file: {progress_path}")
     progress = RpgProgress(
+        completed_chapters=_string_set(payload.get("completed_chapters"), "completed_chapters"),
         completed_tasks=_string_set(payload.get("completed_tasks"), "completed_tasks"),
         completed_bosses=_string_set(payload.get("completed_bosses"), "completed_bosses"),
         notes=_notes_from_payload(payload.get("notes")),
@@ -265,6 +387,7 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
     progress_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "completed_tasks": sorted(progress.completed_tasks),
+        "completed_chapters": sorted(progress.completed_chapters),
         "completed_bosses": sorted(progress.completed_bosses),
         "notes": [
             {
@@ -272,6 +395,7 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
                 "created_at": note.created_at,
                 "text": note.text,
                 "tags": note.tags,
+                "linked_chapter_id": note.linked_chapter_id,
                 "linked_task_id": note.linked_task_id,
                 "linked_boss_id": note.linked_boss_id,
             }
@@ -286,14 +410,20 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
 
 def _validate_progress(progress: RpgProgress, journey: RpgJourney) -> None:
     task_ids = {task.id for task in journey.daily_tasks}
+    chapter_ids = {chapter.id for chapter in journey.chapters}
     boss_ids = {boss.id for boss in journey.boss_tasks}
+    unknown_chapters = progress.completed_chapters - chapter_ids
     unknown_tasks = progress.completed_tasks - task_ids
     unknown_bosses = progress.completed_bosses - boss_ids
+    if unknown_chapters:
+        raise ValueError(f"unknown RPG chapter id: {sorted(unknown_chapters)[0]}")
     if unknown_tasks:
         raise ValueError(f"unknown RPG task id: {sorted(unknown_tasks)[0]}")
     if unknown_bosses:
         raise ValueError(f"unknown RPG boss id: {sorted(unknown_bosses)[0]}")
     for note in progress.notes:
+        if note.linked_chapter_id is not None and note.linked_chapter_id not in chapter_ids:
+            raise ValueError(f"unknown RPG chapter id: {note.linked_chapter_id}")
         if note.linked_task_id is not None and note.linked_task_id not in task_ids:
             raise ValueError(f"unknown RPG task id: {note.linked_task_id}")
         if note.linked_boss_id is not None and note.linked_boss_id not in boss_ids:
@@ -349,6 +479,9 @@ def _notes_from_payload(value: Any) -> list[RpgNote]:
                 created_at=created_at,
                 text=text,
                 tags=_string_list(item.get("tags"), "notes.tags"),
+                linked_chapter_id=_optional_string(
+                    item.get("linked_chapter_id"), "notes.linked_chapter_id"
+                ),
                 linked_task_id=_optional_string(item.get("linked_task_id"), "notes.linked_task_id"),
                 linked_boss_id=_optional_string(item.get("linked_boss_id"), "notes.linked_boss_id"),
             )

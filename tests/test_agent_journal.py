@@ -2,8 +2,10 @@ from pathlib import Path
 
 from financial_report_rpg.agent_journal import (
     build_notion_export,
+    complete_chapter,
     generate_html_report,
     generate_text_report,
+    next_check_in,
     record_note,
     save_reports,
 )
@@ -59,6 +61,36 @@ def test_reports_include_current_progress_notes_and_no_user_inputs():
     assert "先把应收、存货和经营现金流放进一张地图。" in html_report
     assert "<input" not in html_report.lower()
     assert "<textarea" not in html_report.lower()
+    assert "当前关卡" in text_report
+    assert "通关标准" in html_report
+
+
+def test_next_check_in_guides_chapter_by_chapter():
+    journey = default_journey()
+    progress = RpgProgress()
+
+    first_gate = next_check_in(progress, journey)
+    assert first_gate.kind == "chapter"
+    assert first_gate.id == "first_impression"
+    assert "第一判断" in first_gate.prompt
+    assert first_gate.completion_command == "complete-chapter first_impression"
+
+    progress = complete_chapter(progress, "first_impression", journey)
+    second_gate = next_check_in(progress, journey)
+    assert second_gate.kind == "chapter"
+    assert second_gate.id == "revenue_structure"
+    assert "收入" in second_gate.title
+
+
+def test_next_check_in_falls_back_to_daily_tasks_after_chapters():
+    journey = default_journey()
+    progress = RpgProgress(completed_chapters={chapter.id for chapter in journey.chapters})
+
+    gate = next_check_in(progress, journey)
+
+    assert gate.kind == "daily_task"
+    assert gate.id == "mdna"
+    assert "管理层讨论" in gate.title
 
 
 def test_save_reports_writes_text_and_html(tmp_path: Path):

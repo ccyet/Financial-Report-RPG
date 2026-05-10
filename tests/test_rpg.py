@@ -24,6 +24,23 @@ def test_default_rpg_journey_has_delivery_milestones():
     assert journey.world_raid.unlock_required_bosses == 4
 
 
+def test_default_rpg_journey_has_guided_check_in_standards():
+    journey = default_journey()
+
+    for chapter in journey.chapters:
+        assert chapter.check_in_prompt
+        assert len(chapter.pass_criteria) >= 2
+    for task in journey.daily_tasks:
+        assert task.check_in_prompt
+        assert len(task.pass_criteria) >= 2
+    for boss in journey.boss_tasks:
+        assert len(boss.pass_criteria) >= 2
+
+    assert "第一判断" in journey.chapters[0].check_in_prompt
+    assert "卖什么" in journey.chapters[0].pass_criteria[0]
+    assert "打卡" in journey.daily_tasks[0].pass_criteria[-1]
+
+
 def test_task_progress_updates_level_badges_and_world_raid_separately():
     journey = default_journey()
     progress = RpgProgress()
@@ -56,6 +73,17 @@ def test_progress_persists_to_json(tmp_path: Path):
 
     assert loaded.completed_tasks == {"mdna"}
     assert loaded.completed_bosses == {"three_year_map"}
+
+
+def test_chapter_progress_persists_to_json(tmp_path: Path):
+    journey = default_journey()
+    path = tmp_path / "progress.json"
+    progress = RpgProgress(completed_chapters={"first_impression"})
+
+    save_progress(progress, path)
+    loaded = load_progress(path, journey)
+
+    assert loaded.completed_chapters == {"first_impression"}
 
 
 def test_unknown_progress_id_fails_explicitly():

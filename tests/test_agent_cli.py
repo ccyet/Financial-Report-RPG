@@ -42,3 +42,23 @@ def test_agent_cli_can_complete_task_with_note(tmp_path: Path):
     progress = load_progress(progress_path, default_journey())
     assert progress.completed_tasks == {"cash"}
     assert progress.notes[0].linked_task_id == "cash"
+
+
+def test_agent_cli_guides_and_completes_chapter_check_ins(tmp_path: Path):
+    progress_path = tmp_path / "progress.json"
+    report_dir = tmp_path / "exports"
+
+    guide = run_command(["next"], progress_path=progress_path, report_dir=report_dir)
+    assert "当前关卡：初始印象" in guide
+    assert "通关标准" in guide
+
+    run_command(
+        ["complete-chapter", "first_impression", "--note", "已写下第一判断。"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+
+    progress = load_progress(progress_path, default_journey())
+    assert progress.completed_chapters == {"first_impression"}
+    assert progress.notes[0].linked_chapter_id == "first_impression"
+    assert progress.notes[0].linked_task_id is None

@@ -17,6 +17,10 @@ def test_financial_report_rpg_skill_is_conversation_first():
     content = Path("skills/financial-report-rpg/SKILL.md").read_text(encoding="utf-8")
 
     assert "对话" in content
+    assert "关卡检验标准" in content
+    assert "不满足标准" in content
+    assert "打卡" in content
     assert "record_note" in content
+    assert "next_check_in" in content
     assert "generate_html_report" in content
     assert "不要要求用户打开 Streamlit" in content

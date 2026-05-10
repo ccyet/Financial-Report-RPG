@@ -6,7 +6,9 @@
 
 主入口是 `skills/financial-report-rpg/SKILL.md`。把这个仓库放进支持本地文件读写的 AI 工作区后，直接和 AI 对话：
 
+- “开启财报 RPG，给我当前关卡”
 - “记录：宁德时代现金流比利润更值得先核对”
+- “我回答完了，按标准看能不能打卡”
 - “完成现金流副本，笔记是经营现金流和净利润要放一起看”
 - “导出当前进度”
 
@@ -19,16 +21,18 @@ AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
 
 ```bash
 uv run python -m financial_report_rpg.agent_cli status
+uv run python -m financial_report_rpg.agent_cli next
 uv run python -m financial_report_rpg.agent_cli note --text "先记录一条研究假设" --tag "假设"
+uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
 uv run python -m financial_report_rpg.agent_cli export
 ```
 
 ## RPG 结构
 
-- 主线战役：7 个章节，从初始印象到画像确认和灵感沉淀。
-- 每日副本：6 个轻量任务，完成后获得 XP 和徽章。
-- Boss 关卡：4 个阶段性输出，完成后解锁世界副本。
+- 主线战役：7 个章节，每章都有引导问题和通关标准。
+- 每日副本：6 个轻量打卡任务，完成后获得 XP 和徽章。
+- Boss 关卡：4 个阶段性输出，必须满足检验标准后才通关。
 - 世界副本：研究产业在国家价值链中的位置。
 
 ## 可选查看器
