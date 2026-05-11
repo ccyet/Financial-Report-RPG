@@ -19,6 +19,7 @@ uv sync
 agent 应先读取 `SKILL.md`，再从仓库根目录运行：
 
 ```bash
+uv run python -m financial_report_rpg.agent_cli doctor
 uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
 ```
 
@@ -42,6 +43,7 @@ uv run python -m financial_report_rpg.agent_cli start --dungeon "半导体矿洞
 
 ```bash
 uv run python -m financial_report_rpg.agent_cli download-reports 300750
+uv run python -m financial_report_rpg.agent_cli list-docs 300750
 ```
 
 该命令会下载招股说明书和 2022 年至今的年度、半年度、一季度、三季度报告。输出只显示资料背包结算，不向用户展示本地绝对路径。
@@ -62,6 +64,14 @@ uv run python -m financial_report_rpg.agent_cli note \
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression \
   --note "已完成初始印象：业务、客户、产业位置和待验证问题齐备。"
 ```
+
+## 查看结算面板
+
+```bash
+uv run python -m financial_report_rpg.agent_cli panel
+```
+
+不支持图片的终端应优先展示这个面板，而不是展示本地文件路径。
 
 ## 导出当前进度
 

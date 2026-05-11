@@ -2,7 +2,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from financial_report_rpg.agent_cli import run_command
+from financial_report_rpg.cninfo import CninfoClient, CninfoError
 from financial_report_rpg.rpg import default_journey, load_progress
+from tests.test_cninfo import FakeCninfoFetch
 
 
 def test_agent_cli_records_note_and_exports_reports(tmp_path: Path):
@@ -147,6 +149,101 @@ def test_agent_cli_download_reports_returns_game_message_without_paths(tmp_path:
     assert "2022年至今财报 4 份" in output
     assert str(tmp_path) not in output
     assert "progress.html" not in output
+
+
+def test_download_list_panel_flow_binds_docs_to_current_dungeon(tmp_path: Path):
+    progress_path = tmp_path / "progress.json"
+    report_dir = tmp_path / "exports"
+    docs_dir = tmp_path / "reports"
+    client = CninfoClient(fetch=FakeCninfoFetch())
+
+    run_command(
+        ["start", "--dungeon", "动力电池峡谷"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    download_output = run_command(
+        ["download-reports", "300750", "--output-dir", str(docs_dir)],
+        progress_path=progress_path,
+        report_dir=report_dir,
+        cninfo_client=client,
+    )
+    docs_output = run_command(
+        ["list-docs", "300750", "--output-dir", str(docs_dir)],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    run_command(
+        ["complete-chapter", "first_impression", "--note", "第一关完成。"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    panel_output = run_command(["panel"], progress_path=progress_path, report_dir=report_dir)
+    battery_status = run_command(["status"], progress_path=progress_path, report_dir=report_dir)
+    run_command(
+        ["start", "--dungeon", "半导体矿洞"],
+        progress_path=progress_path,
+        report_dir=report_dir,
+    )
+    semiconductor_status = run_command(
+        ["status"], progress_path=progress_path, report_dir=report_dir
+    )
+
+    assert "资料背包更新" in download_output
+    assert "宁德时代：招股书 1，财报 4" in battery_status
+    assert "资料背包：宁德时代：招股书 1，财报 4" in panel_output
+    assert "最近记录：第一关完成。" in panel_output
+    assert "资料清单：宁德时代（300750）" in docs_output
+    assert "年度报告" in docs_output
+    assert "三季度报告" in docs_output
+    assert "宁德时代" not in semiconductor_status
+    for output in [
+        download_output,
+        docs_output,
+        panel_output,
+        battery_status,
+        semiconductor_status,
+    ]:
+        assert str(tmp_path) not in output
+        assert "manifest.json" not in output
+        assert ".pdf" not in output
+
+
+def test_agent_cli_doctor_reports_ready_and_failures(tmp_path: Path):
+    class ReadyClient:
+        def ping(self):
+            return None
+
+    ready_output = run_command(
+        ["doctor"],
+        progress_path=tmp_path / "progress.json",
+        report_dir=tmp_path / "exports",
+        cninfo_client=ReadyClient(),
+        repo_root=Path.cwd(),
+    )
+    bad_progress = tmp_path / "bad.json"
+    bad_progress.write_text("{bad json", encoding="utf-8")
+
+    class BrokenClient:
+        def ping(self):
+            raise CninfoError("巨潮不可达")
+
+    failure_output = run_command(
+        ["doctor"],
+        progress_path=bad_progress,
+        report_dir=tmp_path / "exports",
+        cninfo_client=BrokenClient(),
+        repo_root=tmp_path,
+    )
+
+    assert "诊断面板" in ready_output
+    assert "仓库根目录：通过" in ready_output
+    assert "巨潮连通：通过" in ready_output
+    assert str(tmp_path) not in ready_output
+    assert "仓库根目录：未通过" in failure_output
+    assert "存档读取：未通过" in failure_output
+    assert "巨潮连通：未通过" in failure_output
+    assert str(tmp_path) not in failure_output
 
 
 def test_agent_cli_keeps_progress_separate_by_industry_dungeon(tmp_path: Path):

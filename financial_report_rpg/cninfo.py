@@ -84,6 +84,34 @@ class CninfoFailure:
 
 
 @dataclass(frozen=True)
+class CninfoDocumentEntry:
+    company_code: str
+    company_name: str
+    announcement_id: str
+    title: str
+    report_year: int | None
+    report_type: str
+    file_name: str
+    status: str
+
+
+@dataclass(frozen=True)
+class CninfoDocumentManifest:
+    security: CninfoSecurity
+    from_year: int
+    to_date: str
+    documents: list[CninfoDocumentEntry]
+
+    @property
+    def prospectus_count(self) -> int:
+        return sum(1 for document in self.documents if document.report_type == "招股说明书")
+
+    @property
+    def financial_report_count(self) -> int:
+        return len(self.documents) - self.prospectus_count
+
+
+@dataclass(frozen=True)
 class CninfoDownloadSummary:
     security: CninfoSecurity
     from_year: int
@@ -118,6 +146,11 @@ class CninfoClient:
     def __init__(self, *, fetch: Fetch | None = None):
         self._fetch = fetch or _default_fetch
 
+    def ping(self) -> None:
+        payload = self._fetch_json(CNINFO_STOCK_LIST_URL)
+        if not isinstance(payload.get("stockList"), list):
+            raise CninfoError("巨潮网证券列表返回格式异常")
+
     def download_company_documents(
         self,
         company: str,
@@ -143,13 +176,27 @@ class CninfoClient:
 
         company_dir = Path(output_dir) / f"{security.code}_{_safe_filename(security.name)}"
         company_dir.mkdir(parents=True, exist_ok=True)
+        existing_documents = {
+            document.announcement_id: document
+            for document in _load_manifest_from_path(_manifest_path(company_dir)).documents
+        }
 
         saved_files: list[CninfoSavedFile] = []
         failures: list[CninfoFailure] = []
+        manifest_documents: dict[str, CninfoDocumentEntry] = dict(existing_documents)
         for announcement in announcements:
-            target = company_dir / _announcement_filename(announcement)
+            existing_document = existing_documents.get(announcement.announcement_id)
+            file_name = (
+                existing_document.file_name
+                if existing_document
+                else _announcement_filename(announcement)
+            )
+            target = company_dir / file_name
             if target.exists() and target.stat().st_size > 0:
                 saved_files.append(CninfoSavedFile(announcement, target, "exists"))
+                manifest_documents[announcement.announcement_id] = _document_entry(
+                    security, announcement, file_name=file_name, status="exists"
+                )
                 continue
             try:
                 content = self._fetch(
@@ -160,8 +207,31 @@ class CninfoClient:
                     raise CninfoError("下载内容不是 PDF")
                 target.write_bytes(content)
                 saved_files.append(CninfoSavedFile(announcement, target, "downloaded"))
+                manifest_documents[announcement.announcement_id] = _document_entry(
+                    security, announcement, file_name=file_name, status="downloaded"
+                )
             except Exception as exc:  # noqa: BLE001
                 failures.append(CninfoFailure(announcement, str(exc)))
+                manifest_documents[announcement.announcement_id] = _document_entry(
+                    security, announcement, file_name=file_name, status="failed"
+                )
+
+        _save_manifest(
+            company_dir,
+            CninfoDocumentManifest(
+                security=security,
+                from_year=from_year,
+                to_date=to_date,
+                documents=sorted(
+                    manifest_documents.values(),
+                    key=lambda document: (
+                        document.report_year or 0,
+                        document.report_type,
+                        document.title,
+                    ),
+                ),
+            ),
+        )
 
         return CninfoDownloadSummary(
             security=security,
@@ -301,6 +371,121 @@ class CninfoClient:
         return payload
 
 
+def load_document_manifest(
+    company: str,
+    *,
+    output_dir: str | Path = DEFAULT_CNINFO_REPORT_DIR,
+) -> CninfoDocumentManifest:
+    query = company.strip()
+    if not query:
+        raise CninfoError("上市公司代码或简称不能为空")
+    matches: list[CninfoDocumentManifest] = []
+    for manifest_path in Path(output_dir).glob("*/manifest.json"):
+        manifest = _load_manifest_from_path(manifest_path)
+        if manifest.security.code == query or manifest.security.name == query:
+            matches.append(manifest)
+    if not matches:
+        raise CninfoError(f"本地资料背包未找到：{query}")
+    if len(matches) > 1:
+        candidates = "、".join(f"{item.security.name}({item.security.code})" for item in matches)
+        raise CninfoError(f"本地资料背包匹配不唯一：{candidates}")
+    return matches[0]
+
+
+def _save_manifest(company_dir: Path, manifest: CninfoDocumentManifest) -> None:
+    payload = {
+        "company_code": manifest.security.code,
+        "company_name": manifest.security.name,
+        "org_id": manifest.security.org_id,
+        "from_year": manifest.from_year,
+        "to_date": manifest.to_date,
+        "documents": [
+            {
+                "company_code": document.company_code,
+                "company_name": document.company_name,
+                "announcement_id": document.announcement_id,
+                "title": document.title,
+                "report_year": document.report_year,
+                "report_type": document.report_type,
+                "file_name": document.file_name,
+                "status": document.status,
+            }
+            for document in manifest.documents
+        ],
+    }
+    _manifest_path(company_dir).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _load_manifest_from_path(path: Path) -> CninfoDocumentManifest:
+    if not path.exists():
+        return CninfoDocumentManifest(
+            security=CninfoSecurity(code="", org_id="", name=""),
+            from_year=DEFAULT_FROM_YEAR,
+            to_date="",
+            documents=[],
+        )
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise CninfoError("资料清单格式异常") from exc
+    if not isinstance(payload, dict):
+        raise CninfoError("资料清单格式异常")
+    security = CninfoSecurity(
+        code=_manifest_string(payload.get("company_code"), "company_code"),
+        org_id=_manifest_string(payload.get("org_id"), "org_id"),
+        name=_manifest_string(payload.get("company_name"), "company_name"),
+    )
+    documents_payload = payload.get("documents") or []
+    if not isinstance(documents_payload, list):
+        raise CninfoError("资料清单格式异常")
+    documents = [_document_entry_from_payload(item) for item in documents_payload]
+    return CninfoDocumentManifest(
+        security=security,
+        from_year=_manifest_int(payload.get("from_year"), "from_year"),
+        to_date=_manifest_string(payload.get("to_date"), "to_date"),
+        documents=documents,
+    )
+
+
+def _document_entry_from_payload(payload: Any) -> CninfoDocumentEntry:
+    if not isinstance(payload, dict):
+        raise CninfoError("资料清单格式异常")
+    report_year = payload.get("report_year")
+    if report_year is not None and not isinstance(report_year, int):
+        raise CninfoError("资料清单格式异常")
+    return CninfoDocumentEntry(
+        company_code=_manifest_string(payload.get("company_code"), "documents.company_code"),
+        company_name=_manifest_string(payload.get("company_name"), "documents.company_name"),
+        announcement_id=_manifest_string(
+            payload.get("announcement_id"), "documents.announcement_id"
+        ),
+        title=_manifest_string(payload.get("title"), "documents.title"),
+        report_year=report_year,
+        report_type=_manifest_string(payload.get("report_type"), "documents.report_type"),
+        file_name=_manifest_string(payload.get("file_name"), "documents.file_name"),
+        status=_manifest_string(payload.get("status"), "documents.status"),
+    )
+
+
+def _manifest_string(value: Any, field_name: str) -> str:
+    if not isinstance(value, str):
+        raise CninfoError(f"资料清单字段异常：{field_name}")
+    return value
+
+
+def _manifest_int(value: Any, field_name: str) -> int:
+    if not isinstance(value, int):
+        raise CninfoError(f"资料清单字段异常：{field_name}")
+    return value
+
+
+def _manifest_path(company_dir: Path) -> Path:
+    return company_dir / "manifest.json"
+
+
 def _default_fetch(url: str, *, data: bytes | None = None, headers=None) -> bytes:
     request = Request(url, data=data, headers=headers or {})
     with urlopen(request, timeout=30) as response:
@@ -337,6 +522,25 @@ def _announcement_from_payload(payload: dict[str, Any], kind: str) -> CninfoAnno
     )
 
 
+def _document_entry(
+    security: CninfoSecurity,
+    announcement: CninfoAnnouncement,
+    *,
+    file_name: str,
+    status: str,
+) -> CninfoDocumentEntry:
+    return CninfoDocumentEntry(
+        company_code=security.code,
+        company_name=security.name,
+        announcement_id=announcement.announcement_id,
+        title=announcement.title,
+        report_year=_report_year(announcement.title),
+        report_type=_report_type(announcement),
+        file_name=file_name,
+        status=status,
+    )
+
+
 def _clean_title(title: str) -> str:
     return unescape(re.sub(r"<[^>]+>", "", title)).strip()
 
@@ -356,6 +560,28 @@ def _is_financial_report(title: str, *, from_year: int) -> bool:
         return False
     year_match = re.search(r"(20\d{2})年", title)
     return bool(year_match and int(year_match.group(1)) >= from_year)
+
+
+def _report_year(title: str) -> int | None:
+    year_match = re.search(r"(20\d{2})年", title)
+    if not year_match:
+        return None
+    return int(year_match.group(1))
+
+
+def _report_type(announcement: CninfoAnnouncement) -> str:
+    if announcement.kind == "prospectus":
+        return "招股说明书"
+    title = announcement.title
+    if "半年度报告" in title:
+        return "半年度报告"
+    if "一季度报告" in title or "第一季度报告" in title:
+        return "一季度报告"
+    if "三季度报告" in title or "第三季度报告" in title:
+        return "三季度报告"
+    if "年度报告" in title:
+        return "年度报告"
+    return "财报"
 
 
 def _dedupe_announcements(items: list[CninfoAnnouncement]) -> list[CninfoAnnouncement]:

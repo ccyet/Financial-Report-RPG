@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from financial_report_rpg.rpg import (
+    RpgDocumentPack,
     RpgProgress,
     default_journey,
     dungeon_progress,
@@ -96,6 +97,28 @@ def test_each_industry_dungeon_has_independent_progress(tmp_path: Path):
     assert loaded.active_dungeon == "半导体矿洞"
     assert dungeon_progress(loaded, "动力电池峡谷").completed_tasks == {"cash"}
     assert dungeon_progress(loaded, "半导体矿洞").completed_tasks == set()
+
+
+def test_document_pack_is_bound_to_industry_dungeon(tmp_path: Path):
+    journey = default_journey()
+    path = tmp_path / "progress.json"
+    progress = RpgProgress(active_dungeon="动力电池峡谷")
+    battery = dungeon_progress(progress).with_document_pack(
+        RpgDocumentPack(
+            company_code="300750",
+            company_name="宁德时代",
+            prospectus_count=1,
+            financial_report_count=4,
+        )
+    )
+    progress = progress.with_dungeon("动力电池峡谷", battery)
+    progress = progress.switch_dungeon("半导体矿洞")
+
+    save_progress(progress, path)
+    loaded = load_progress(path, journey)
+
+    assert dungeon_progress(loaded, "动力电池峡谷").document_pack.company_name == "宁德时代"
+    assert dungeon_progress(loaded, "半导体矿洞").document_pack is None
 
 
 def test_progress_persists_to_json(tmp_path: Path):

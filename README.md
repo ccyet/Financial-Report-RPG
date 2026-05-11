@@ -42,6 +42,7 @@ openclaw gateway restart
 - “完成现金流副本，笔记是经营现金流和净利润要放一起看”
 - “导出当前进度”
 - “下载宁德时代的招股说明书和 2022 年至今财报”
+- “打开结算面板”
 
 AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
 
@@ -55,16 +56,19 @@ AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
 所有命令都从仓库根目录运行：
 
 ```bash
+uv run python -m financial_report_rpg.agent_cli doctor
 uv run python -m financial_report_rpg.agent_cli start
 uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
+uv run python -m financial_report_rpg.agent_cli download-reports 300750
+uv run python -m financial_report_rpg.agent_cli list-docs 300750
 uv run python -m financial_report_rpg.agent_cli status
 uv run python -m financial_report_rpg.agent_cli next
 uv run python -m financial_report_rpg.agent_cli set-dungeon "半导体矿洞"
 uv run python -m financial_report_rpg.agent_cli note --text "先记录一条研究假设" --tag "假设"
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
+uv run python -m financial_report_rpg.agent_cli panel
 uv run python -m financial_report_rpg.agent_cli export
-uv run python -m financial_report_rpg.agent_cli download-reports 300750
 ```
 
 一个行业就是一个副本。不同行业副本的主线、每日、Boss 和笔记进度彼此独立；切换副本不会清空其他行业的存档。
@@ -81,9 +85,21 @@ uv run python -m financial_report_rpg.agent_cli download-reports 300750
 ```bash
 uv run python -m financial_report_rpg.agent_cli download-reports 300750
 uv run python -m financial_report_rpg.agent_cli download-reports 宁德时代 --from-year 2022
+uv run python -m financial_report_rpg.agent_cli list-docs 宁德时代
 ```
 
-命令输出只返回资料背包结算，不展示本地绝对路径。下载失败会明确列出失败标题和错误原因。
+下载后会生成本地资料清单，重复运行会跳过已下载 PDF。命令输出只返回资料背包结算，不展示本地绝对路径。下载失败会明确列出失败标题和错误原因。
+
+## 推荐流程
+
+1. `doctor`：先检查运行环境、存档和巨潮连通性。
+2. `start --dungeon "<行业副本>"`：进入当前行业副本。
+3. `download-reports <股票代码或简称>`：准备资料背包并绑定到当前副本。
+4. `next`：读取当前关卡问题和通关标准。
+5. `note`：记录用户原始想法。
+6. `complete-chapter` / `complete-task` / `complete-boss`：满足标准后打卡。
+7. `panel`：输出不含路径的结算面板；终端支持图片时再展示 HTML 截图。
+8. `export`：刷新本地文本和 HTML 进度报告。
 
 ## RPG 结构
 

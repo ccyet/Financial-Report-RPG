@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from urllib.parse import parse_qs
 
-from financial_report_rpg.cninfo import CninfoClient
+from financial_report_rpg.cninfo import CninfoClient, load_document_manifest
 
 
 class FakeCninfoFetch:
@@ -87,6 +87,47 @@ def test_cninfo_downloads_prospectus_and_financial_reports(tmp_path: Path):
     assert all("2021年年度报告" not in name for name in files)
     assert all("摘要" not in name for name in files)
     assert all("<em>" not in name for name in files)
+
+
+def test_cninfo_writes_manifest_and_skips_existing_downloads(tmp_path: Path):
+    first_fetch = FakeCninfoFetch()
+    client = CninfoClient(fetch=first_fetch)
+
+    first_summary = client.download_company_documents(
+        "300750",
+        from_year=2022,
+        output_dir=tmp_path,
+        today="2026-05-11",
+    )
+    manifest = load_document_manifest("300750", output_dir=tmp_path)
+
+    assert first_summary.downloaded_count == 5
+    assert manifest.security.code == "300750"
+    assert manifest.security.name == "宁德时代"
+    assert len(manifest.documents) == 5
+    assert {doc.report_type for doc in manifest.documents} == {
+        "招股说明书",
+        "年度报告",
+        "半年度报告",
+        "一季度报告",
+        "三季度报告",
+    }
+    assert any(
+        doc.report_year == 2025 and doc.file_name.endswith(".pdf") for doc in manifest.documents
+    )
+
+    second_fetch = FakeCninfoFetch()
+    second_client = CninfoClient(fetch=second_fetch)
+    second_summary = second_client.download_company_documents(
+        "300750",
+        from_year=2022,
+        output_dir=tmp_path,
+        today="2026-05-11",
+    )
+
+    assert second_summary.downloaded_count == 0
+    assert second_summary.skipped_count == 5
+    assert second_fetch.downloaded_urls == []
 
 
 def _announcement_payload(items: list[dict]) -> bytes:

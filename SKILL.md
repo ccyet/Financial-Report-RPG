@@ -22,15 +22,15 @@ version: 2026.05.10
 
 # 引导式闯关流程
 
-1. 每次启动先运行 `start`，用游戏风格启动引导词告知当前行业副本的存档进度、等级，并确认本次要挑战的行业副本。
-2. 用 `next_check_in` 找到当前关卡，向用户提出一个引导问题。
-3. 用户回答后，先用 `record_note` 保存原始想法。
-4. 按当前关卡的通关标准检查回答：满足标准才打卡；不满足标准就继续追问缺失部分。
-5. 主线关卡用 `complete-chapter` 打卡，每日副本用 `complete-task` 打卡，Boss 关卡用 `complete-boss` 打卡。
-6. 每次状态变化后保存 `.local/rpg_progress.json`，并刷新 `.local/rpg_exports/` 下的文本和 HTML 进度报告。
-7. 关卡结束时不展示存储路径等无关信息；保持沉浸式游戏语气，只给等级、主线进度、Boss 进度和下一关。
-8. 若用户模型或终端支持图片，发送 HTML 中等级与进度区域的截图；不支持图片时，用游戏风格文字告知当前结算。
-9. 用户要求准备财报资料时，运行 `download-reports` 下载巨潮网资料；回复只给资料背包结算，不展示本地路径。
+1. 首次使用或用户卡住时先运行 `doctor`，检查仓库根目录、本地写入、存档读取和巨潮连通性。
+2. 每次启动运行 `start`，用游戏风格启动引导词告知当前行业副本的存档进度、等级，并确认本次要挑战的行业副本。
+3. 用户要求准备财报资料时，运行 `download-reports` 下载巨潮网资料并绑定到当前副本；回复只给资料背包结算，不展示本地路径。
+4. 用 `next_check_in` 找到当前关卡，向用户提出一个引导问题。
+5. 用户回答后，先用 `record_note` 保存原始想法。
+6. 按当前关卡的通关标准检查回答：满足标准才打卡；不满足标准就继续追问缺失部分。
+7. 主线关卡用 `complete-chapter` 打卡，每日副本用 `complete-task` 打卡，Boss 关卡用 `complete-boss` 打卡。
+8. 每次状态变化后保存 `.local/rpg_progress.json`，并刷新 `.local/rpg_exports/` 下的文本和 HTML 进度报告。
+9. 关卡结束时运行 `panel` 输出不含路径的结算面板；若用户模型或终端支持图片，再发送 HTML 中等级与进度区域的截图。
 
 # 关卡检验标准
 
@@ -44,7 +44,10 @@ version: 2026.05.10
 
 ```bash
 uv run python -m financial_report_rpg.agent_cli start
+uv run python -m financial_report_rpg.agent_cli doctor
 uv run python -m financial_report_rpg.agent_cli start --dungeon "动力电池峡谷"
+uv run python -m financial_report_rpg.agent_cli download-reports 300750
+uv run python -m financial_report_rpg.agent_cli list-docs 300750
 uv run python -m financial_report_rpg.agent_cli status
 uv run python -m financial_report_rpg.agent_cli next
 uv run python -m financial_report_rpg.agent_cli set-dungeon "半导体矿洞"
@@ -52,8 +55,8 @@ uv run python -m financial_report_rpg.agent_cli note --text "记录一条研究�
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
 uv run python -m financial_report_rpg.agent_cli complete-boss three_year_map --note "三年财报地图已完成"
+uv run python -m financial_report_rpg.agent_cli panel
 uv run python -m financial_report_rpg.agent_cli export
-uv run python -m financial_report_rpg.agent_cli download-reports 300750
 uv run python -m financial_report_rpg.agent_cli download-reports 宁德时代 --from-year 2022
 ```
 

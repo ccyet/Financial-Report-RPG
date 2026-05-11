@@ -66,12 +66,21 @@ class RpgNote:
 
 
 @dataclass(frozen=True)
+class RpgDocumentPack:
+    company_code: str
+    company_name: str
+    prospectus_count: int
+    financial_report_count: int
+
+
+@dataclass(frozen=True)
 class RpgProgress:
     active_dungeon: str | None = None
     completed_chapters: set[str] = field(default_factory=set)
     completed_tasks: set[str] = field(default_factory=set)
     completed_bosses: set[str] = field(default_factory=set)
     notes: list[RpgNote] = field(default_factory=list)
+    document_pack: RpgDocumentPack | None = None
     dungeons: dict[str, RpgProgress] = field(default_factory=dict)
 
     def switch_dungeon(self, dungeon: str) -> RpgProgress:
@@ -98,6 +107,16 @@ class RpgProgress:
             dungeons=dungeons,
         )
 
+    def with_document_pack(self, document_pack: RpgDocumentPack) -> RpgProgress:
+        return RpgProgress(
+            active_dungeon=self.active_dungeon,
+            completed_chapters=set(self.completed_chapters),
+            completed_tasks=set(self.completed_tasks),
+            completed_bosses=set(self.completed_bosses),
+            notes=list(self.notes),
+            document_pack=document_pack,
+        )
+
     def as_dungeon_snapshot(self, dungeon: str | None = None) -> RpgProgress:
         return RpgProgress(
             active_dungeon=dungeon or self.active_dungeon,
@@ -105,6 +124,7 @@ class RpgProgress:
             completed_tasks=set(self.completed_tasks),
             completed_bosses=set(self.completed_bosses),
             notes=list(self.notes),
+            document_pack=self.document_pack,
         )
 
     def _with_active_snapshot(self) -> RpgProgress:
@@ -438,6 +458,7 @@ def load_progress(path: str | Path, journey: RpgJourney) -> RpgProgress:
         completed_tasks=_string_set(payload.get("completed_tasks"), "completed_tasks"),
         completed_bosses=_string_set(payload.get("completed_bosses"), "completed_bosses"),
         notes=_notes_from_payload(payload.get("notes")),
+        document_pack=_document_pack_from_payload(payload.get("document_pack")),
         dungeons=dungeons,
     )
     if progress.active_dungeon and progress.active_dungeon not in progress.dungeons:
@@ -466,6 +487,7 @@ def save_progress(progress: RpgProgress, path: str | Path) -> None:
             }
             for note in progress.notes
         ],
+        "document_pack": _document_pack_payload(progress.document_pack),
         "dungeons": {
             name: _progress_payload(dungeon_progress(snapshot, name))
             for name, snapshot in sorted(progress._with_active_snapshot().dungeons.items())
@@ -528,6 +550,7 @@ def _progress_payload(progress: RpgProgress) -> dict[str, Any]:
             }
             for note in progress.notes
         ],
+        "document_pack": _document_pack_payload(progress.document_pack),
     }
 
 
@@ -550,6 +573,7 @@ def _dungeons_from_payload(value: Any, journey: RpgJourney) -> dict[str, RpgProg
                 payload.get("completed_bosses"), "dungeons.completed_bosses"
             ),
             notes=_notes_from_payload(payload.get("notes")),
+            document_pack=_document_pack_from_payload(payload.get("document_pack")),
         )
         _validate_progress(snapshot, journey)
         dungeons[name] = snapshot
@@ -562,6 +586,42 @@ def _is_empty_dungeon_snapshot(progress: RpgProgress) -> bool:
         or progress.completed_tasks
         or progress.completed_bosses
         or progress.notes
+        or progress.document_pack
+    )
+
+
+def _document_pack_payload(document_pack: RpgDocumentPack | None) -> dict[str, Any] | None:
+    if document_pack is None:
+        return None
+    return {
+        "company_code": document_pack.company_code,
+        "company_name": document_pack.company_name,
+        "prospectus_count": document_pack.prospectus_count,
+        "financial_report_count": document_pack.financial_report_count,
+    }
+
+
+def _document_pack_from_payload(value: Any) -> RpgDocumentPack | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise ValueError("invalid RPG progress field: document_pack")
+    company_code = value.get("company_code")
+    company_name = value.get("company_name")
+    prospectus_count = value.get("prospectus_count")
+    financial_report_count = value.get("financial_report_count")
+    if (
+        not isinstance(company_code, str)
+        or not isinstance(company_name, str)
+        or not isinstance(prospectus_count, int)
+        or not isinstance(financial_report_count, int)
+    ):
+        raise ValueError("invalid RPG progress field: document_pack")
+    return RpgDocumentPack(
+        company_code=company_code,
+        company_name=company_name,
+        prospectus_count=prospectus_count,
+        financial_report_count=financial_report_count,
     )
 
 
