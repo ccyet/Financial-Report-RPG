@@ -41,11 +41,14 @@ openclaw gateway restart
 - “我回答完了，按标准看能不能打卡”
 - “完成现金流副本，笔记是经营现金流和净利润要放一起看”
 - “导出当前进度”
+- “下载宁德时代的招股说明书和 2022 年至今财报”
 
 AI 应把状态保存到 `.local/rpg_progress.json`，并同步生成：
 
 - `.local/rpg_exports/progress.md`
 - `.local/rpg_exports/progress.html`
+
+导出命令只刷新本地进度报告；面向用户回复时不展示具体存储路径。
 
 ## 本地命令
 
@@ -61,9 +64,26 @@ uv run python -m financial_report_rpg.agent_cli note --text "先记录一条研�
 uv run python -m financial_report_rpg.agent_cli complete-chapter first_impression --note "初始印象已完成"
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
 uv run python -m financial_report_rpg.agent_cli export
+uv run python -m financial_report_rpg.agent_cli download-reports 300750
 ```
 
 一个行业就是一个副本。不同行业副本的主线、每日、Boss 和笔记进度彼此独立；切换副本不会清空其他行业的存档。
+
+## 巨潮财报下载
+
+`download-reports` 会从巨潮网按股票代码或证券简称解析上市公司，并下载：
+
+- 招股说明书。
+- 2022 年至今的年度报告、半年度报告、一季度报告、三季度报告。
+
+示例：
+
+```bash
+uv run python -m financial_report_rpg.agent_cli download-reports 300750
+uv run python -m financial_report_rpg.agent_cli download-reports 宁德时代 --from-year 2022
+```
+
+命令输出只返回资料背包结算，不展示本地绝对路径。下载失败会明确列出失败标题和错误原因。
 
 ## RPG 结构
 
@@ -104,6 +124,6 @@ uv run ruff check .
 
 ## 边界
 
-- 不接外部行情或财报服务。
-- 不伪造财报数据或联网抓取。
+- 只接入巨潮网公告下载，不接外部行情服务。
+- 不伪造财报数据，不自动替用户编造财报结论。
 - 不构成投资建议。

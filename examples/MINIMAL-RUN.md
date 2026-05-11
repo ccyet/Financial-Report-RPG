@@ -36,6 +36,16 @@ uv run python -m financial_report_rpg.agent_cli start --dungeon "半导体矿洞
 
 半导体矿洞会拥有独立进度，不会继承动力电池峡谷的关卡完成状态。
 
+## 下载财报资料
+
+用户指定上市公司后，可先下载巨潮网资料：
+
+```bash
+uv run python -m financial_report_rpg.agent_cli download-reports 300750
+```
+
+该命令会下载招股说明书和 2022 年至今的年度、半年度、一季度、三季度报告。输出只显示资料背包结算，不向用户展示本地绝对路径。
+
 ## 记录一次回答
 
 ```bash
@@ -59,11 +69,6 @@ uv run python -m financial_report_rpg.agent_cli complete-chapter first_impressio
 uv run python -m financial_report_rpg.agent_cli export
 ```
 
-输出文件：
-
-- `.local/rpg_exports/progress.md`
-- `.local/rpg_exports/progress.html`
-
 `.local/` 是个人存档目录，不应提交到 Git。
 
-关卡结束时，agent 不应把这些路径直接抛给用户；如果终端支持图片，展示 HTML 的等级与进度截图，否则用游戏风格文字结算。
+导出命令会刷新本地文本和 HTML 进度报告，但 agent 不应把具体路径直接抛给用户；如果终端支持图片，展示 HTML 的等级与进度截图，否则用游戏风格文字结算。

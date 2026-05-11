@@ -15,7 +15,8 @@ version: 2026.05.10
 - 不要只复制 `skills/financial-report-rpg/`；这个 skill 依赖仓库里的 `financial_report_rpg` Python 模块。
 - 进度文件写入 `.local/rpg_progress.json`，导出文件写入 `.local/rpg_exports/`。
 - 一个行业就是一个副本；不同行业副本拥有彼此独立的主线、每日、Boss 和笔记进度。
-- 不联网抓财报，不伪造数据，不给投资建议。
+- 可按用户指定上市公司从巨潮网下载招股说明书和 2022 年至今财报。
+- 不接行情服务，不伪造数据，不给投资建议。
 - 不要要求用户打开 Streamlit；Streamlit 只是可选查看器，不是主流程。
 
 # 对话流程
@@ -27,6 +28,7 @@ version: 2026.05.10
 5. 主线用 `complete-chapter`，每日副本用 `complete-task`，Boss 用 `complete-boss`。
 6. 每次状态变化后运行 `export`，生成文本和 HTML 进度报告。
 7. 关卡结束后不展示存储路径；若终端支持图片，发送 HTML 等级与进度截图；不支持图片时，用游戏风格文字结算。
+8. 用户要求准备财报资料时，运行 `download-reports` 下载巨潮网资料；回复只给资料背包结算，不展示本地路径。
 
 对应 Python 接口包括 `record_note`、`next_check_in`、`generate_html_report` 和 `build_notion_export`。Notion 只作为预留接口，用户提供自己的数据库或页面后再写入。
 
@@ -43,8 +45,10 @@ uv run python -m financial_report_rpg.agent_cli complete-chapter first_impressio
 uv run python -m financial_report_rpg.agent_cli complete-task cash --note "现金流副本已完成"
 uv run python -m financial_report_rpg.agent_cli complete-boss three_year_map --note "三年财报地图已完成"
 uv run python -m financial_report_rpg.agent_cli export
+uv run python -m financial_report_rpg.agent_cli download-reports 300750
+uv run python -m financial_report_rpg.agent_cli download-reports 宁德时代 --from-year 2022
 ```
 
 # 输出格式
 
-每轮状态更新后，优先给当前关卡、通关标准、本轮是否通过、缺口或打卡结果。关卡结束不展示存储路径；只有用户明确要求导出时，才说明 `.local/rpg_exports/progress.md` / `.local/rpg_exports/progress.html`。
+每轮状态更新后，优先给当前关卡、通关标准、本轮是否通过、缺口或打卡结果。关卡结束和导出后都不展示存储路径；只给游戏式状态面板或资料背包结算。

@@ -13,6 +13,7 @@ from financial_report_rpg.agent_journal import (
     record_note,
     save_reports,
 )
+from financial_report_rpg.cninfo import DEFAULT_CNINFO_REPORT_DIR, CninfoClient, CninfoError
 from financial_report_rpg.rpg import (
     RpgProgress,
     default_journey,
@@ -30,6 +31,7 @@ def run_command(
     *,
     progress_path: str | Path = DEFAULT_PROGRESS_PATH,
     report_dir: str | Path = DEFAULT_REPORT_DIR,
+    cninfo_client: CninfoClient | None = None,
 ) -> str:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -51,7 +53,7 @@ def run_command(
 
     if args.command == "status":
         save_reports(progress, journey, report_dir)
-        return _status_message(dungeon_progress(progress), journey, report_dir)
+        return _status_message(dungeon_progress(progress), journey)
 
     if args.command == "next":
         save_reports(progress, journey, report_dir)
@@ -71,7 +73,7 @@ def run_command(
         progress = _store_active(progress, active)
         save_progress(progress, progress_path)
         save_reports(progress, journey, report_dir)
-        return _status_message(active, journey, report_dir, prefix="已记录")
+        return _status_message(active, journey, prefix="已记录")
 
     if args.command == "complete-chapter":
         active = complete_chapter(dungeon_progress(progress), args.chapter_id, journey)
@@ -117,9 +119,19 @@ def run_command(
 
     if args.command == "export":
         save_reports(progress, journey, report_dir)
-        return _status_message(
-            dungeon_progress(progress), journey, report_dir, prefix="已导出", show_paths=True
-        )
+        return _status_message(dungeon_progress(progress), journey, prefix="已导出")
+
+    if args.command == "download-reports":
+        client = cninfo_client or CninfoClient()
+        try:
+            summary = client.download_company_documents(
+                args.company,
+                from_year=args.from_year,
+                output_dir=args.output_dir,
+            )
+        except CninfoError as exc:
+            return f"资料下载失败：{exc}"
+        return _download_reports_message(summary)
 
     raise ValueError(f"unknown command: {args.command}")
 
@@ -167,20 +179,22 @@ def _build_parser() -> argparse.ArgumentParser:
     complete_boss_parser.add_argument("--note")
 
     subparsers.add_parser("export")
+
+    download_reports = subparsers.add_parser("download-reports")
+    download_reports.add_argument("company")
+    download_reports.add_argument("--from-year", type=int, default=2022)
+    download_reports.add_argument("--output-dir", type=Path, default=DEFAULT_CNINFO_REPORT_DIR)
     return parser
 
 
 def _status_message(
     progress,
     journey,
-    report_dir: str | Path,
     *,
     prefix: str = "当前状态",
-    show_paths: bool = False,
 ) -> str:
     summary = summarize_progress(progress, journey)
-    report_path = Path(report_dir)
-    message = (
+    return (
         f"{prefix}：{summary.level_title}，"
         f"等级 {summary.level}/{summary.max_level}，"
         f"{summary.xp}/{summary.max_xp} XP，"
@@ -188,15 +202,27 @@ def _status_message(
         f"每日副本 {summary.daily_completed}/{summary.daily_total}，"
         f"Boss {summary.boss_completed}/{summary.boss_total}。"
     )
-    if show_paths:
-        return f"{message}报告：{report_path / 'progress.md'}；{report_path / 'progress.html'}"
-    return message
 
 
 def _store_active(progress: RpgProgress, active: RpgProgress) -> RpgProgress:
     if not active.active_dungeon:
         return active
     return progress.with_dungeon(active.active_dungeon, active)
+
+
+def _download_reports_message(summary) -> str:
+    message = (
+        f"资料背包更新：{summary.security.name}（{summary.security.code}）。"
+        f"招股说明书 {summary.prospectus_count} 份，"
+        f"{summary.from_year}年至今财报 {summary.financial_report_count} 份。"
+        f"新增 {summary.downloaded_count} 份，已有 {summary.skipped_count} 份。"
+    )
+    if summary.failed_count:
+        failures = "；".join(
+            f"{failure.announcement.title}：{failure.error}" for failure in summary.failures[:3]
+        )
+        return f"{message}失败 {summary.failed_count} 份：{failures}"
+    return f"{message}资料已经收入财报背包，可进入公司画像或收入结构关卡。"
 
 
 def _start_message(progress, journey) -> str:

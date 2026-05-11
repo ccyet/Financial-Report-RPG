@@ -8,8 +8,7 @@ def test_financial_report_rpg_skill_exists_and_points_to_local_state():
     content = skill_path.read_text(encoding="utf-8")
     assert "name: financial-report-rpg" in content
     assert ".local/rpg_progress.json" in content
-    assert ".local/rpg_exports/progress.md" in content
-    assert ".local/rpg_exports/progress.html" in content
+    assert ".local/rpg_exports/" in content
     assert "Notion" in content
 
 

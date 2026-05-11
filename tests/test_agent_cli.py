@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 from financial_report_rpg.agent_cli import run_command
 from financial_report_rpg.rpg import default_journey, load_progress
@@ -100,6 +101,51 @@ def test_agent_cli_completion_is_immersive_and_hides_storage_paths(tmp_path: Pat
     assert "主线 1/50" in output
     assert "若当前终端支持图片" in output
     assert ".local" not in output
+    assert "progress.html" not in output
+
+
+def test_agent_cli_export_hides_storage_paths(tmp_path: Path):
+    progress_path = tmp_path / "progress.json"
+    report_dir = tmp_path / "exports"
+
+    output = run_command(["export"], progress_path=progress_path, report_dir=report_dir)
+
+    assert "已导出" in output
+    assert "报告：" not in output
+    assert str(report_dir) not in output
+    assert "progress.md" not in output
+    assert "progress.html" not in output
+
+
+def test_agent_cli_download_reports_returns_game_message_without_paths(tmp_path: Path):
+    class FakeDownloadClient:
+        def download_company_documents(self, company, *, from_year, output_dir):
+            assert company == "300750"
+            assert from_year == 2022
+            assert output_dir == tmp_path / "reports"
+            return SimpleNamespace(
+                security=SimpleNamespace(code="300750", name="宁德时代"),
+                from_year=2022,
+                prospectus_count=1,
+                financial_report_count=4,
+                downloaded_count=5,
+                skipped_count=0,
+                failed_count=0,
+                failures=[],
+            )
+
+    output = run_command(
+        ["download-reports", "300750", "--output-dir", str(tmp_path / "reports")],
+        progress_path=tmp_path / "progress.json",
+        report_dir=tmp_path / "exports",
+        cninfo_client=FakeDownloadClient(),
+    )
+
+    assert "资料背包更新" in output
+    assert "宁德时代（300750）" in output
+    assert "招股说明书 1 份" in output
+    assert "2022年至今财报 4 份" in output
+    assert str(tmp_path) not in output
     assert "progress.html" not in output
 
 
